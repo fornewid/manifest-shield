@@ -10,28 +10,28 @@ import javax.inject.Inject
 public open class ManifestGuardPluginExtension @Inject constructor(
     private val objects: ObjectFactory
 ) {
-    internal val variants = objects.domainObjectContainer(ManifestGuardConfiguration::class.java)
+    internal val configurations = objects.domainObjectContainer(ManifestGuardConfiguration::class.java)
 
-    public fun variant(name: String) {
-        variants.add(newVariantConfig(name))
+    public fun configuration(name: String) {
+        configurations.add(newConfiguration(name))
     }
 
     /**
      * Supports configuration in build files.
      *
      * manifestGuard {
-     *   variant("release") {
+     *   configuration("release") {
      *     permissions = true
      *     activities = true
      *     tree = true
      *   }
      * }
      */
-    public fun variant(name: String, config: Action<ManifestGuardConfiguration>) {
-        variants.add(newVariantConfig(name, config))
+    public fun configuration(name: String, config: Action<ManifestGuardConfiguration>) {
+        configurations.add(newConfiguration(name, config))
     }
 
-    private fun newVariantConfig(
+    private fun newConfiguration(
         name: String,
         config: Action<ManifestGuardConfiguration>? = null
     ): ManifestGuardConfiguration {

@@ -44,7 +44,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
     abstract val blameLogFile: RegularFileProperty
 
     @get:Input
-    abstract val variantName: Property<String>
+    abstract val configurationName: Property<String>
 
     @get:Input
     abstract val projectPath: Property<String>
@@ -79,7 +79,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
     @TaskAction
     internal fun execute() {
         val manifest = ManifestVisitor.parse(mergedManifestFile.get().asFile)
-        val variant = variantName.get()
+        val configName = configurationName.get()
         val path = projectPath.get()
         val mapper = baselineMap.get()
         val baseline = shouldBaseline.get()
@@ -105,7 +105,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
                 elementType = "uses-permission",
                 category = "permissions",
                 sourceMap = sourceMap,
-                variantName = variant,
+                configurationName = configName,
                 projectPath = path,
                 baselineMap = mapper,
                 shouldBaseline = baseline,
@@ -126,7 +126,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
                     elementType = type.tagName,
                     category = "${type.tagName}s",
                     sourceMap = sourceMap,
-                    variantName = variant,
+                    configurationName = configName,
                     projectPath = path,
                     baselineMap = mapper,
                     shouldBaseline = baseline,
@@ -142,7 +142,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
                 elementType = "uses-feature",
                 category = "features",
                 sourceMap = sourceMap,
-                variantName = variant,
+                configurationName = configName,
                 projectPath = path,
                 baselineMap = mapper,
                 shouldBaseline = baseline,
@@ -161,7 +161,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         elementType: String,
         category: String,
         sourceMap: Map<String, String>,
-        variantName: String,
+        configurationName: String,
         projectPath: String,
         baselineMap: (String) -> String?,
         shouldBaseline: Boolean,
@@ -171,11 +171,11 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         val treeContent = buildTreeContent(entries, elementType, sourceMap, baselineMap)
         val baselineFile = OutputFileUtils.baselineFile(dir, "$category.tree")
 
-        val result = writeAndDiff(baselineFile, treeContent, projectPath, variantName, "$category.tree", shouldBaseline)
+        val result = writeAndDiff(baselineFile, treeContent, projectPath, configurationName, "$category.tree", shouldBaseline)
 
         when (result) {
             is HasDiff -> {
-                val rebaselineMsg = Messaging.rebaselineMessage(projectPath, variantName)
+                val rebaselineMsg = Messaging.rebaselineMessage(projectPath, configurationName)
                 logger.error(result.createDiffMessage(withColor = true, rebaselineMessage = rebaselineMsg))
                 exceptionMessage.appendLine(result.createDiffMessage(withColor = false, rebaselineMessage = rebaselineMsg))
             }
@@ -223,17 +223,17 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         baselineFile: File,
         reportContent: String,
         projectPath: String,
-        variantName: String,
+        configurationName: String,
         category: String,
         shouldBaseline: Boolean,
     ): ManifestListDiffResult {
         return if (shouldBaseline || !baselineFile.exists()) {
             baselineFile.writeText(reportContent)
-            BaselineCreated(projectPath = projectPath, variantName = variantName, category = category, baselineFile = baselineFile)
+            BaselineCreated(projectPath = projectPath, configurationName = configurationName, category = category, baselineFile = baselineFile)
         } else {
             ManifestListDiff.performDiff(
                 projectPath = projectPath,
-                variantName = variantName,
+                configurationName = configurationName,
                 category = category,
                 expectedContent = baselineFile.readText(),
                 actualContent = reportContent,
@@ -253,7 +253,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         if (blameLog != null && blameLog.exists()) {
             this.blameLogFile.set(blameLog)
         }
-        this.variantName.set(config.variantName)
+        this.configurationName.set(config.configurationName)
         this.projectPath.set(projectPath)
         this.shouldBaseline.set(shouldBaseline)
         this.guardPermissions.set(config.permissions)

@@ -3,6 +3,7 @@ public class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuardConfig
 	public final fun getActivities ()Z
 	public final fun getAllowedFilter ()Lkotlin/jvm/functions/Function1;
 	public final fun getBaselineMap ()Lkotlin/jvm/functions/Function1;
+	public final fun getConfigurationName ()Ljava/lang/String;
 	public final fun getFeatures ()Z
 	public fun getName ()Ljava/lang/String;
 	public final fun getPermissions ()Z
@@ -10,7 +11,6 @@ public class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuardConfig
 	public final fun getReceivers ()Z
 	public final fun getServices ()Z
 	public final fun getTree ()Z
-	public final fun getVariantName ()Ljava/lang/String;
 	public final fun setActivities (Z)V
 	public final fun setAllowedFilter (Lkotlin/jvm/functions/Function1;)V
 	public final fun setBaselineMap (Lkotlin/jvm/functions/Function1;)V
@@ -30,6 +30,6 @@ public final class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuard
 
 public class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuardPluginExtension {
 	public fun <init> (Lorg/gradle/api/model/ObjectFactory;)V
-	public final fun variant (Ljava/lang/String;)V
-	public final fun variant (Ljava/lang/String;Lorg/gradle/api/Action;)V
+	public final fun configuration (Ljava/lang/String;)V
+	public final fun configuration (Ljava/lang/String;Lorg/gradle/api/Action;)V
 }

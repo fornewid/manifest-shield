@@ -9,7 +9,7 @@ internal class ManifestListDiffTest {
     fun `no diff when contents are identical`() {
         val result = ManifestListDiff.performDiff(
             projectPath = ":app",
-            variantName = "release",
+            configurationName = "release",
             category = "permissions",
             expectedContent = "android.permission.INTERNET\nandroid.permission.CAMERA\n",
             actualContent = "android.permission.INTERNET\nandroid.permission.CAMERA\n",
@@ -21,7 +21,7 @@ internal class ManifestListDiffTest {
     fun `has diff when entry added`() {
         val result = ManifestListDiff.performDiff(
             projectPath = ":app",
-            variantName = "release",
+            configurationName = "release",
             category = "permissions",
             expectedContent = "android.permission.INTERNET\n",
             actualContent = "android.permission.INTERNET\nandroid.permission.CAMERA\n",
@@ -35,7 +35,7 @@ internal class ManifestListDiffTest {
     fun `has diff when entry removed`() {
         val result = ManifestListDiff.performDiff(
             projectPath = ":app",
-            variantName = "release",
+            configurationName = "release",
             category = "activities",
             expectedContent = "com.example.MainActivity (exported)\ncom.example.DetailActivity\n",
             actualContent = "com.example.MainActivity (exported)\n",

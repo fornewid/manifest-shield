@@ -5,13 +5,13 @@ import java.io.File
 internal sealed class ManifestListDiffResult {
     internal class BaselineCreated(
         projectPath: String,
-        variantName: String,
+        configurationName: String,
         category: String,
         baselineFile: File,
     ) : ManifestListDiffResult() {
 
         private val baselineMessage = """
-            Manifest Guard baseline created for $projectPath ($variantName/$category).
+            Manifest Guard baseline created for $projectPath ($configurationName/$category).
             File: file://${baselineFile.canonicalPath}
         """.trimIndent()
 
@@ -26,22 +26,22 @@ internal sealed class ManifestListDiffResult {
 
         internal class NoDiff(
             projectPath: String,
-            variantName: String,
+            configurationName: String,
             category: String,
         ) : DiffPerformed() {
             val noDiffMessage: String =
-                "No Manifest Changes Found in $projectPath for $variantName/$category"
+                "No Manifest Changes Found in $projectPath for $configurationName/$category"
         }
 
         internal data class HasDiff(
             val projectPath: String,
-            val variantName: String,
+            val configurationName: String,
             val category: String,
             val removedAndAddedLines: RemovedAndAddedLines,
         ) : DiffPerformed() {
 
             private val changedMessage =
-                """Manifest Changed in $projectPath for $variantName/$category"""
+                """Manifest Changed in $projectPath for $configurationName/$category"""
 
             fun createDiffMessage(withColor: Boolean, rebaselineMessage: String): String = buildString {
                 appendLine(

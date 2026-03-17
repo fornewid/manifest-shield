@@ -19,7 +19,7 @@ plugins {
 }
 
 manifestGuard {
-    variant("release") {
+    configuration("release") {
         permissions = true
         activities = true
         services = true

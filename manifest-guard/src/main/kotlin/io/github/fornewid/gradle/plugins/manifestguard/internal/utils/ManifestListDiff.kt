@@ -4,7 +4,7 @@ internal object ManifestListDiff {
 
     fun performDiff(
         projectPath: String,
-        variantName: String,
+        configurationName: String,
         category: String,
         expectedContent: String,
         actualContent: String,
@@ -17,14 +17,14 @@ internal object ManifestListDiff {
         return if (removedAndAddedLines.hasDifference) {
             ManifestListDiffResult.DiffPerformed.HasDiff(
                 projectPath = projectPath,
-                variantName = variantName,
+                configurationName = configurationName,
                 category = category,
                 removedAndAddedLines = removedAndAddedLines,
             )
         } else {
             ManifestListDiffResult.DiffPerformed.NoDiff(
                 projectPath = projectPath,
-                variantName = variantName,
+                configurationName = configurationName,
                 category = category,
             )
         }

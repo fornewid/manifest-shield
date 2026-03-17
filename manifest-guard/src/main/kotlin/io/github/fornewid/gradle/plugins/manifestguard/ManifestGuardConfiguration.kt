@@ -8,12 +8,15 @@ import javax.inject.Inject
  * Configuration for [ManifestGuardPlugin] per build variant.
  */
 public open class ManifestGuardConfiguration @Inject constructor(
+    /**
+     * Name of the build variant (e.g., "release", "debug", "devRelease")
+     */
     @get:Input
-    public val variantName: String,
+    public val configurationName: String,
 ) : Named {
 
     @Input
-    public override fun getName(): String = variantName
+    public override fun getName(): String = configurationName
 
     /** Guard uses-permission declarations */
     @get:Input

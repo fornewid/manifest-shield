@@ -33,7 +33,7 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
     abstract val mergedManifestFile: RegularFileProperty
 
     @get:Input
-    abstract val variantName: Property<String>
+    abstract val configurationName: Property<String>
 
     @get:Input
     abstract val projectPath: Property<String>
@@ -71,7 +71,7 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
     @TaskAction
     internal fun execute() {
         val manifest = ManifestVisitor.parse(mergedManifestFile.get().asFile)
-        val variant = variantName.get()
+        val configName = configurationName.get()
         val path = projectPath.get()
         val filter = allowedFilter.get()
         val mapper = baselineMap.get()
@@ -81,22 +81,22 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         val exceptionMessage = StringBuilder()
 
         if (guardPermissions.get()) {
-            processCategory(manifest.permissions, "permissions", variant, path, filter, mapper, baseline, dir, exceptionMessage)
+            processCategory(manifest.permissions, "permissions", configName, path, filter, mapper, baseline, dir, exceptionMessage)
         }
         if (guardActivities.get()) {
-            processCategory(manifest.activities, "activities", variant, path, filter, mapper, baseline, dir, exceptionMessage)
+            processCategory(manifest.activities, "activities", configName, path, filter, mapper, baseline, dir, exceptionMessage)
         }
         if (guardServices.get()) {
-            processCategory(manifest.services, "services", variant, path, filter, mapper, baseline, dir, exceptionMessage)
+            processCategory(manifest.services, "services", configName, path, filter, mapper, baseline, dir, exceptionMessage)
         }
         if (guardReceivers.get()) {
-            processCategory(manifest.receivers, "receivers", variant, path, filter, mapper, baseline, dir, exceptionMessage)
+            processCategory(manifest.receivers, "receivers", configName, path, filter, mapper, baseline, dir, exceptionMessage)
         }
         if (guardProviders.get()) {
-            processCategory(manifest.providers, "providers", variant, path, filter, mapper, baseline, dir, exceptionMessage)
+            processCategory(manifest.providers, "providers", configName, path, filter, mapper, baseline, dir, exceptionMessage)
         }
         if (guardFeatures.get()) {
-            processCategory(manifest.features, "features", variant, path, filter, mapper, baseline, dir, exceptionMessage)
+            processCategory(manifest.features, "features", configName, path, filter, mapper, baseline, dir, exceptionMessage)
         }
 
         exceptionMessage.toString().takeIf(String::isNotEmpty)?.let {
@@ -107,7 +107,7 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
     private fun processCategory(
         entries: List<ManifestEntry>,
         category: String,
-        variantName: String,
+        configurationName: String,
         projectPath: String,
         allowedFilter: (String) -> Boolean,
         baselineMap: (String) -> String?,
@@ -118,7 +118,7 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         val disallowed = entries.filter { !allowedFilter(it.name) }
         if (disallowed.isNotEmpty()) {
             throw GradleException(buildString {
-                appendLine("Disallowed manifest entries found in $projectPath ($variantName/$category):")
+                appendLine("Disallowed manifest entries found in $projectPath ($configurationName/$category):")
                 disallowed.forEach { appendLine("  \"${it.name}\"") }
                 appendLine()
                 appendLine("These entries must be removed based on the configured 'allowedFilter'.")
@@ -131,11 +131,11 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
 
         val baselineFile = OutputFileUtils.baselineFile(dir, category)
 
-        val result = writeAndDiff(baselineFile, reportContent, projectPath, variantName, category, shouldBaseline)
+        val result = writeAndDiff(baselineFile, reportContent, projectPath, configurationName, category, shouldBaseline)
 
         when (result) {
             is HasDiff -> {
-                val rebaselineMsg = Messaging.rebaselineMessage(projectPath, variantName)
+                val rebaselineMsg = Messaging.rebaselineMessage(projectPath, configurationName)
                 logger.error(result.createDiffMessage(withColor = true, rebaselineMessage = rebaselineMsg))
                 exceptionMessage.appendLine(result.createDiffMessage(withColor = false, rebaselineMessage = rebaselineMsg))
             }
@@ -148,17 +148,17 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         baselineFile: File,
         reportContent: String,
         projectPath: String,
-        variantName: String,
+        configurationName: String,
         category: String,
         shouldBaseline: Boolean,
     ): ManifestListDiffResult {
         return if (shouldBaseline || !baselineFile.exists()) {
             baselineFile.writeText(reportContent)
-            BaselineCreated(projectPath = projectPath, variantName = variantName, category = category, baselineFile = baselineFile)
+            BaselineCreated(projectPath = projectPath, configurationName = configurationName, category = category, baselineFile = baselineFile)
         } else {
             ManifestListDiff.performDiff(
                 projectPath = projectPath,
-                variantName = variantName,
+                configurationName = configurationName,
                 category = category,
                 expectedContent = baselineFile.readText(),
                 actualContent = reportContent,
@@ -174,7 +174,7 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         shouldBaseline: Boolean,
     ) {
         this.mergedManifestFile.set(mergedManifest)
-        this.variantName.set(config.variantName)
+        this.configurationName.set(config.configurationName)
         this.projectPath.set(projectPath)
         this.shouldBaseline.set(shouldBaseline)
         this.guardPermissions.set(config.permissions)
