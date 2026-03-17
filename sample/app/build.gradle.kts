@@ -18,13 +18,13 @@ dependencies {
 }
 
 manifestGuard {
-    // All dependencies included in Production Release APK
-    configuration("releaseRuntimeClasspath") {
-        modules = true
+    variant("release") {
+        permissions = true
+        activities = true
+        services = true
+        receivers = true
+        providers = true
+        features = true
         tree = true
-        allowedFilter = {
-            // Disallow dependencies with a name containing "test"
-            !it.contains("test")
-        }
     }
 }

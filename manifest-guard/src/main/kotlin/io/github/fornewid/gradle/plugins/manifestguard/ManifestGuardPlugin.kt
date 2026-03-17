@@ -1,15 +1,18 @@
 package io.github.fornewid.gradle.plugins.manifestguard
 
-import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestTreeDiffTaskNames
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.Variant
 import io.github.fornewid.gradle.plugins.manifestguard.internal.list.ManifestGuardListTask
 import io.github.fornewid.gradle.plugins.manifestguard.internal.tree.ManifestTreeDiffTask
+import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.OutputFileUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 /**
- * A plugin for watching dependency changes
+ * A plugin for guarding against unintentional AndroidManifest.xml changes
  */
 public class ManifestGuardPlugin : Plugin<Project> {
 
@@ -30,107 +33,104 @@ public class ManifestGuardPlugin : Plugin<Project> {
             target.objects
         )
 
-        val manifestGuardBaselineTask = registerManifestGuardBaselineTask(target, extension)
-        val manifestGuardTask = registerManifestGuardTask(target, extension)
-        registerTreeDiffTasks(
-            target = target,
-            extension = extension,
-            baselineTask = manifestGuardBaselineTask,
-            guardTask = manifestGuardTask
-        )
+        val guardTask = target.tasks.register(MANIFEST_GUARD_TASK_NAME) {
+            group = MANIFEST_GUARD_TASK_GROUP
+            description = "Guard against unintentional manifest changes"
+        }
+        val baselineTask = target.tasks.register(MANIFEST_GUARD_BASELINE_TASK_NAME) {
+            group = MANIFEST_GUARD_TASK_GROUP
+            description = "Save current manifest as baseline"
+        }
 
-        attachToCheckTask(
-            target = target,
-            manifestGuardTask = manifestGuardTask
-        )
+        target.pluginManager.withPlugin("com.android.application") {
+            configureVariants(target, extension, guardTask, baselineTask)
+        }
+        target.pluginManager.withPlugin("com.android.library") {
+            configureVariants(target, extension, guardTask, baselineTask)
+        }
+        target.pluginManager.withPlugin("com.android.dynamic-feature") {
+            configureVariants(target, extension, guardTask, baselineTask)
+        }
+
+        attachToCheckTask(target, guardTask)
     }
 
-    private fun attachToCheckTask(target: Project, manifestGuardTask: TaskProvider<ManifestGuardListTask>) {
-        // Only add to the "check" lifecycle task if the base plugin is applied
+    private fun attachToCheckTask(target: Project, guardTask: TaskProvider<*>) {
         target.pluginManager.withPlugin("base") {
-            // Attach the "manifestGuard" task to the "check" lifecycle task
             target.tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
-                this.dependsOn(manifestGuardTask)
+                this.dependsOn(guardTask)
             }
         }
     }
 
-    private fun registerManifestGuardBaselineTask(
-        target: Project,
-        extension: ManifestGuardPluginExtension
-    ): TaskProvider<ManifestGuardListTask> {
-        return target.tasks.register(
-            MANIFEST_GUARD_BASELINE_TASK_NAME,
-            ManifestGuardListTask::class.java
-        ) {
-            val task = this
-            task.setParams(
-                project = target,
-                extension = extension,
-                shouldBaseline = true
-            )
-        }
+    @Suppress("DEPRECATION")
+    private fun String.capitalize(): String {
+        return if (isEmpty()) "" else get(0).toUpperCase() + substring(1)
     }
 
-    private fun registerManifestGuardTask(
-        target: Project,
-        extension: ManifestGuardPluginExtension
-    ): TaskProvider<ManifestGuardListTask> {
-        return target.tasks.register(
-            MANIFEST_GUARD_TASK_NAME,
-            ManifestGuardListTask::class.java
-        ) {
-            setParams(
-                project = target,
-                extension = extension,
-                shouldBaseline = false
-            )
-        }
-    }
-
-    private fun registerTreeDiffTasks(
-        target: Project,
+    private fun configureVariants(
+        project: Project,
         extension: ManifestGuardPluginExtension,
-        baselineTask: TaskProvider<ManifestGuardListTask>,
-        guardTask: TaskProvider<ManifestGuardListTask>
+        guardTask: TaskProvider<*>,
+        baselineTask: TaskProvider<*>,
     ) {
-        extension.configurations.all {
-            val manifestGuardConfiguration = this
-            if (manifestGuardConfiguration.tree) {
-                val taskClass = ManifestTreeDiffTask::class.java
+        val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
 
-                val treeGuardTask = target.tasks.register(
-                    ManifestTreeDiffTaskNames.createManifestTreeTaskNameForConfiguration(
-                        configurationName = manifestGuardConfiguration.configurationName
-                    ),
-                    taskClass
-                ) {
-                    setParams(
-                        project = target,
-                        configurationName = manifestGuardConfiguration.configurationName,
-                        shouldBaseline = false
-                    )
-                }
-                guardTask.configure {
-                    dependsOn(treeGuardTask)
-                }
-
-                val treeBaselineTask = target.tasks.register(
-                    ManifestTreeDiffTaskNames.createManifestTreeBaselineTaskNameForConfiguration(
-                        configurationName = manifestGuardConfiguration.configurationName
-                    ),
-                    taskClass
-                ) {
-                    setParams(
-                        project = target,
-                        configurationName = manifestGuardConfiguration.configurationName,
-                        shouldBaseline = true
-                    )
-                }
-                baselineTask.configure {
-                    dependsOn(treeBaselineTask)
+        androidComponents.onVariants { variant ->
+            extension.variants.configureEach {
+                if (variantName == variant.name) {
+                    registerVariantTasks(project, this, variant, guardTask, baselineTask)
                 }
             }
+        }
+    }
+
+    private fun registerVariantTasks(
+        project: Project,
+        config: ManifestGuardConfiguration,
+        variant: Variant,
+        guardTask: TaskProvider<*>,
+        baselineTask: TaskProvider<*>,
+    ) {
+        val mergedManifest = variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
+        val capitalizedVariant = config.variantName.capitalize()
+        val baselineDirectory = OutputFileUtils.manifestGuardDir(project, config.variantName)
+        val blameLogFile = project.layout.buildDirectory
+            .file("outputs/logs/manifest-merger-${config.variantName}-report.txt")
+            .get().asFile
+
+        val variantGuardTask = project.tasks.register(
+            "manifestGuard$capitalizedVariant",
+            ManifestGuardListTask::class.java
+        ) {
+            setParams(config, mergedManifest, project.path, baselineDirectory, false)
+        }
+        guardTask.configure { dependsOn(variantGuardTask) }
+
+        val variantBaselineTask = project.tasks.register(
+            "manifestGuardBaseline$capitalizedVariant",
+            ManifestGuardListTask::class.java
+        ) {
+            setParams(config, mergedManifest, project.path, baselineDirectory, true)
+        }
+        baselineTask.configure { dependsOn(variantBaselineTask) }
+
+        if (config.tree) {
+            val treeGuardTask = project.tasks.register(
+                "manifestGuardTree$capitalizedVariant",
+                ManifestTreeDiffTask::class.java
+            ) {
+                setParams(config, mergedManifest, blameLogFile, project.path, baselineDirectory, false)
+            }
+            variantGuardTask.configure { dependsOn(treeGuardTask) }
+
+            val treeBaselineTask = project.tasks.register(
+                "manifestGuardTreeBaseline$capitalizedVariant",
+                ManifestTreeDiffTask::class.java
+            ) {
+                setParams(config, mergedManifest, blameLogFile, project.path, baselineDirectory, true)
+            }
+            variantBaselineTask.configure { dependsOn(treeBaselineTask) }
         }
     }
 }

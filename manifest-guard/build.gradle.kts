@@ -11,6 +11,7 @@ plugins {
 
 repositories {
   mavenCentral()
+  google()
   gradlePluginPortal()
 }
 
@@ -24,11 +25,8 @@ tasks.withType<KotlinCompile>().configureEach {
     apiVersion = "1.4"
     languageVersion = "1.4"
 
-    // We use class SAM conversions because lambdas compiled into invokedynamic are not
-    // Serializable, which causes accidental headaches with Gradle configuration caching. It's
-    // easier for us to just use the previous anonymous classes behavior
     @Suppress("SuspiciousCollectionReassignment")
-    freeCompilerArgs += "-Xsam-conversion=class"
+    freeCompilerArgs += "-Xsam-conversions=class"
   }
 }
 
@@ -61,6 +59,7 @@ mavenPublish {
 
 dependencies {
   compileOnly(gradleApi())
+  compileOnly("com.android.tools.build:gradle:7.1.0")
 }
 
 // Ensure build/gradleTest doesn't grow without bound when tests sometimes fail to clean up

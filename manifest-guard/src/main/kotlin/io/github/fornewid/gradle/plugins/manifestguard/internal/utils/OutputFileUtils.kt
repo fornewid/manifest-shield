@@ -1,62 +1,34 @@
 package io.github.fornewid.gradle.plugins.manifestguard.internal.utils
 
-import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestGuardReportType
 import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 
 internal object OutputFileUtils {
 
-    fun projectDirDependenciesDir(
+    fun manifestGuardDir(
         project: Project,
+        variantName: String,
     ): Directory {
-        val dependenciesDir = project.layout.projectDirectory
-            .dir("dependencies")
-        dependenciesDir
-            .asFile
-            .apply {
-                if (!exists()) {
-                    // Create the directory if it does not exist
-                    mkdirs()
-                }
-            }
-        return dependenciesDir
+        val dir = project.layout.projectDirectory
+            .dir("manifest-guard")
+            .dir(variantName)
+        dir.asFile.apply {
+            if (!exists()) mkdirs()
+        }
+        return dir
     }
 
-    fun buildDirOutputFile(
-        buildDirectory: Directory,
-        configurationName: String,
-        reportType: ManifestGuardReportType,
+    fun baselineFile(
+        directory: Directory,
+        fileName: String,
     ): File {
-        val configurationNameAndSuffix = "$configurationName${reportType.fileSuffix}"
-        return buildDirectory
-            .file("$configurationNameAndSuffix.txt")
+        return directory
+            .file("$fileName.txt")
             .asFile
             .apply {
                 parentFile.apply {
-                    if (!exists()) {
-                        // Create the directory if it does not exist
-                        mkdirs()
-                    }
-                }
-            }
-    }
-
-    fun projectDirOutputFile(
-        projectDirectory: Directory,
-        configurationName: String,
-        reportType: ManifestGuardReportType
-    ): File {
-        val configurationNameAndSuffix = "${reportType.filePrefix}$configurationName${reportType.fileSuffix}"
-        return projectDirectory
-            .file("$configurationNameAndSuffix.txt")
-            .asFile
-            .apply {
-                parentFile.apply {
-                    if (!exists()) {
-                        // Create the directory if it does not exist
-                        mkdirs()
-                    }
+                    if (!exists()) mkdirs()
                 }
             }
     }

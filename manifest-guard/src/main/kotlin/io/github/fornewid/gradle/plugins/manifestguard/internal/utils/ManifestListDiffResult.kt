@@ -5,12 +5,13 @@ import java.io.File
 internal sealed class ManifestListDiffResult {
     internal class BaselineCreated(
         projectPath: String,
-        configurationName: String,
+        variantName: String,
+        category: String,
         baselineFile: File,
     ) : ManifestListDiffResult() {
 
         private val baselineMessage = """
-            Manifest Guard baseline created for $projectPath for configuration $configurationName.
+            Manifest Guard baseline created for $projectPath ($variantName/$category).
             File: file://${baselineFile.canonicalPath}
         """.trimIndent()
 
@@ -25,29 +26,29 @@ internal sealed class ManifestListDiffResult {
 
         internal class NoDiff(
             projectPath: String,
-            configurationName: String,
+            variantName: String,
+            category: String,
         ) : DiffPerformed() {
             val noDiffMessage: String =
-                "No Manifest Changes Found in $projectPath for configuration \"$configurationName\""
+                "No Manifest Changes Found in $projectPath for $variantName/$category"
         }
 
         internal data class HasDiff(
             val projectPath: String,
-            val configurationName: String,
+            val variantName: String,
+            val category: String,
             val removedAndAddedLines: RemovedAndAddedLines,
         ) : DiffPerformed() {
 
-            private val dependenciesChangedMessage =
-                """Dependencies Changed in $projectPath for configuration $configurationName"""
+            private val changedMessage =
+                """Manifest Changed in $projectPath for $variantName/$category"""
 
-            private val rebaselineMessage = Messaging.rebaselineMessage(projectPath)
-
-            fun createDiffMessage(withColor: Boolean): String = buildString {
+            fun createDiffMessage(withColor: Boolean, rebaselineMessage: String): String = buildString {
                 appendLine(
                     if (withColor) {
-                        ColorTerminal.colorify(ColorTerminal.ANSI_YELLOW, dependenciesChangedMessage)
+                        ColorTerminal.colorify(ColorTerminal.ANSI_YELLOW, changedMessage)
                     } else {
-                        dependenciesChangedMessage
+                        changedMessage
                     }
                 )
                 appendLine(

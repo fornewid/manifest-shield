@@ -2,47 +2,40 @@ package io.github.fornewid.gradle.plugins.manifestguard.internal.utils
 
 internal object ManifestListDiff {
 
-    /**
-     * @return The detected difference, or null if there was none.
-     */
-    @Suppress("LongParameterList")
     fun performDiff(
         projectPath: String,
-        configurationName: String,
-        expectedDependenciesFileContent: String,
-        actualDependenciesFileContent: String,
+        variantName: String,
+        category: String,
+        expectedContent: String,
+        actualContent: String,
     ): ManifestListDiffResult.DiffPerformed {
-        // Compare Expected vs Actual
         val removedAndAddedLines: RemovedAndAddedLines = compareAndAddPlusMinusPrefixes(
-            expected = expectedDependenciesFileContent.lines(),
-            actual = actualDependenciesFileContent.lines()
+            expected = expectedContent.lines(),
+            actual = actualContent.lines()
         )
 
         return if (removedAndAddedLines.hasDifference) {
             ManifestListDiffResult.DiffPerformed.HasDiff(
                 projectPath = projectPath,
-                configurationName = configurationName,
+                variantName = variantName,
+                category = category,
                 removedAndAddedLines = removedAndAddedLines,
             )
         } else {
             ManifestListDiffResult.DiffPerformed.NoDiff(
                 projectPath = projectPath,
-                configurationName = configurationName,
+                variantName = variantName,
+                category = category,
             )
         }
     }
 
-    /**
-     * Return the difference String, or null if there was no difference
-     */
     private fun compareAndAddPlusMinusPrefixes(
         expected: List<String>,
         actual: List<String>
     ): RemovedAndAddedLines {
-        val removedLines =
-            expected.filter { !actual.contains(it) }
-        val addedLines =
-            actual.filter { !expected.contains(it) }
+        val removedLines = expected.filter { !actual.contains(it) }
+        val addedLines = actual.filter { !expected.contains(it) }
         return RemovedAndAddedLines(
             removedLines = removedLines,
             addedLines = addedLines,

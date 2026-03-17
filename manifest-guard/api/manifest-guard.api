@@ -1,16 +1,24 @@
 public class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuardConfiguration : org/gradle/api/Named {
 	public fun <init> (Ljava/lang/String;)V
+	public final fun getActivities ()Z
 	public final fun getAllowedFilter ()Lkotlin/jvm/functions/Function1;
-	public final fun getArtifacts ()Z
 	public final fun getBaselineMap ()Lkotlin/jvm/functions/Function1;
-	public final fun getConfigurationName ()Ljava/lang/String;
-	public final fun getModules ()Z
+	public final fun getFeatures ()Z
 	public fun getName ()Ljava/lang/String;
+	public final fun getPermissions ()Z
+	public final fun getProviders ()Z
+	public final fun getReceivers ()Z
+	public final fun getServices ()Z
 	public final fun getTree ()Z
+	public final fun getVariantName ()Ljava/lang/String;
+	public final fun setActivities (Z)V
 	public final fun setAllowedFilter (Lkotlin/jvm/functions/Function1;)V
-	public final fun setArtifacts (Z)V
 	public final fun setBaselineMap (Lkotlin/jvm/functions/Function1;)V
-	public final fun setModules (Z)V
+	public final fun setFeatures (Z)V
+	public final fun setPermissions (Z)V
+	public final fun setProviders (Z)V
+	public final fun setReceivers (Z)V
+	public final fun setServices (Z)V
 	public final fun setTree (Z)V
 }
 
@@ -22,7 +30,6 @@ public final class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuard
 
 public class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuardPluginExtension {
 	public fun <init> (Lorg/gradle/api/model/ObjectFactory;)V
-	public final fun configuration (Ljava/lang/String;)V
-	public final fun configuration (Ljava/lang/String;Lorg/gradle/api/Action;)V
+	public final fun variant (Ljava/lang/String;)V
+	public final fun variant (Ljava/lang/String;Lorg/gradle/api/Action;)V
 }
-

@@ -5,45 +5,49 @@ import org.gradle.api.tasks.Input
 import javax.inject.Inject
 
 /**
- * Configuration for [ManifestGuardPlugin]
+ * Configuration for [ManifestGuardPlugin] per build variant.
  */
 public open class ManifestGuardConfiguration @Inject constructor(
-    /**
-     * Name of the build configuration
-     *
-     * See all possibilities by running Gradle's built in ./gradlew project:dependencies
-     */
     @get:Input
-    public val configurationName: String,
+    public val variantName: String,
 ) : Named {
+
     @Input
-    public override fun getName(): String = configurationName
+    public override fun getName(): String = variantName
 
-    /** Whether to include artifacts in the dependency list report */
+    /** Guard uses-permission declarations */
     @get:Input
-    public var artifacts: Boolean = true
+    public var permissions: Boolean = true
 
-    /** Whether to include modules in the dependency list report */
+    /** Guard activity declarations */
     @get:Input
-    public var modules: Boolean = false
+    public var activities: Boolean = true
 
-    /**
-     * Whether to create the dependency tree report
-     *
-     * false by default because while valuable for debugging, get very noisy
-     */
+    /** Guard service declarations */
+    @get:Input
+    public var services: Boolean = true
+
+    /** Guard receiver declarations */
+    @get:Input
+    public var receivers: Boolean = true
+
+    /** Guard provider declarations */
+    @get:Input
+    public var providers: Boolean = true
+
+    /** Guard uses-feature declarations */
+    @get:Input
+    public var features: Boolean = true
+
+    /** Enable tree format with library attribution from blame log */
     @get:Input
     public var tree: Boolean = false
 
-    /**
-     * Rule to determine if a dependency will be allowed.
-     */
+    /** Filter to determine if a manifest entry is allowed */
     @get:Input
-    public var allowedFilter: (dependencyName: String) -> Boolean = { true }
+    public var allowedFilter: (entryName: String) -> Boolean = { true }
 
-    /**
-     * Modify a dependency name or remove it (by returning null) from the baseline file
-     */
+    /** Transform or remove (by returning null) entries from the baseline */
     @get:Input
-    public var baselineMap: (dependencyName: String) -> String? = { it }
+    public var baselineMap: (entryName: String) -> String? = { it }
 }
