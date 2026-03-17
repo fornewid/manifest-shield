@@ -23,7 +23,10 @@ internal object ManifestVisitor {
     private const val ANDROID_NS = "http://schemas.android.com/apk/res/android"
 
     fun parse(manifestFile: File): ManifestExtraction {
-        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(manifestFile)
+        val factory = DocumentBuilderFactory.newInstance().apply {
+            isNamespaceAware = true
+        }
+        val doc = factory.newDocumentBuilder().parse(manifestFile)
         val root = doc.documentElement
 
         val permissions = root.getElementsByTagName("uses-permission")
