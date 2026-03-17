@@ -1,0 +1,49 @@
+package io.github.fornewid.gradle.plugins.manifestguard
+
+import org.gradle.api.Named
+import org.gradle.api.tasks.Input
+import javax.inject.Inject
+
+/**
+ * Configuration for [ManifestGuardPlugin]
+ */
+public open class ManifestGuardConfiguration @Inject constructor(
+    /**
+     * Name of the build configuration
+     *
+     * See all possibilities by running Gradle's built in ./gradlew project:dependencies
+     */
+    @get:Input
+    public val configurationName: String,
+) : Named {
+    @Input
+    public override fun getName(): String = configurationName
+
+    /** Whether to include artifacts in the dependency list report */
+    @get:Input
+    public var artifacts: Boolean = true
+
+    /** Whether to include modules in the dependency list report */
+    @get:Input
+    public var modules: Boolean = false
+
+    /**
+     * Whether to create the dependency tree report
+     *
+     * false by default because while valuable for debugging, get very noisy
+     */
+    @get:Input
+    public var tree: Boolean = false
+
+    /**
+     * Rule to determine if a dependency will be allowed.
+     */
+    @get:Input
+    public var allowedFilter: (dependencyName: String) -> Boolean = { true }
+
+    /**
+     * Modify a dependency name or remove it (by returning null) from the baseline file
+     */
+    @get:Input
+    public var baselineMap: (dependencyName: String) -> String? = { it }
+}

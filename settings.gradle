@@ -1,0 +1,11 @@
+include ":sample:app"
+include ":sample:module1"
+include ":sample:module2"
+
+rootProject.name = "manifest-guard-root"
+
+includeBuild('manifest-guard') {
+  dependencySubstitution {
+    substitute module('io.github.fornewid.manifest-guard:manifest-guard') using project(':')
+  }
+}
