@@ -166,4 +166,19 @@ internal class ManifestGuardPluginTest {
             build(project, ":app:manifestGuardRelease")
         }
     }
+
+    @Test
+    fun `tasks report configuration cache incompatibility gracefully`() {
+        AndroidProject().use { project ->
+            // With --configuration-cache, the build should still succeed
+            // because tasks declare notCompatibleWithConfigurationCache.
+            // Gradle will skip caching but not fail.
+            val result = build(
+                project,
+                ":app:manifestGuardBaselineRelease",
+                "--configuration-cache",
+            )
+            assertThat(result.output).contains("Manifest Guard baseline created")
+        }
+    }
 }
