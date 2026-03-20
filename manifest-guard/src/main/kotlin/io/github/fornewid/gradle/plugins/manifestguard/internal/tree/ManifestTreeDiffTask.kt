@@ -13,11 +13,9 @@ import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestLi
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Messaging
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.OutputFileUtils
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Tasks.declareCompatibilities
+import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.TreeContentBuilder
 import io.github.fornewid.gradle.plugins.manifestguard.models.ComponentType
-import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestEntry
-import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestFeature
-import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestPermission
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
@@ -168,7 +166,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         dir: org.gradle.api.file.Directory,
         exceptionMessage: StringBuilder,
     ) {
-        val treeContent = buildTreeContent(entries, elementType, sourceMap, baselineMap)
+        val treeContent = TreeContentBuilder.build(entries, elementType, sourceMap, baselineMap)
         val baselineFile = OutputFileUtils.baselineFile(dir, "$category.tree")
 
         val result = writeAndDiff(baselineFile, treeContent, projectPath, configurationName, "$category.tree", shouldBaseline)
@@ -181,41 +179,6 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
             }
             is NoDiff -> logger.debug(result.noDiffMessage)
             is BaselineCreated -> logger.lifecycle(result.baselineCreatedMessage(withColor = true))
-        }
-    }
-
-    private fun buildTreeContent(
-        entries: List<ManifestEntry>,
-        elementType: String,
-        sourceMap: Map<String, String>,
-        baselineMap: (String) -> String?,
-    ): String {
-        if (sourceMap.isEmpty()) {
-            return entries
-                .mapNotNull { entry -> baselineMap(entry.toBaselineString())?.let { "$it -- unknown" } }
-                .joinToString("\n", postfix = if (entries.isNotEmpty()) "\n" else "")
-        }
-
-        val grouped = mutableMapOf<String, MutableList<String>>()
-        for (entry in entries) {
-            val key = "$elementType#${entry.name}"
-            val source = sourceMap[key] ?: "unknown"
-            val line = baselineMap(entry.toBaselineString()) ?: continue
-            grouped.getOrPut(source) { mutableListOf() }.add(line)
-        }
-
-        return buildString {
-            val sortedSources = grouped.keys.sorted().let { sources ->
-                val app = sources.filter { it == "app" }
-                val rest = sources.filter { it != "app" }
-                app + rest
-            }
-            for (source in sortedSources) {
-                appendLine("$source:")
-                grouped[source]?.sorted()?.forEach { line ->
-                    appendLine("  $line")
-                }
-            }
         }
     }
 
