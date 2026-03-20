@@ -1,0 +1,133 @@
+package io.github.fornewid.gradle.plugins.manifestguard.fixture
+
+import java.io.File
+import java.util.UUID
+
+internal class AndroidProject(
+    private val manifestContent: String = DEFAULT_MANIFEST,
+    private val pluginConfig: String = DEFAULT_PLUGIN_CONFIG,
+) : AutoCloseable {
+
+    val dir: File = File("build/gradleTest/${UUID.randomUUID()}").apply { mkdirs() }
+
+    init {
+        val pluginJar = System.getProperty("pluginJar")
+            ?: error("pluginJar system property not set. Run via '../gradlew gradleTest'")
+        val escapedJar = pluginJar.replace("\\", "/")
+
+        // settings.gradle
+        dir.resolve("settings.gradle").writeText(
+            """
+            rootProject.name = "test-project"
+            include ':app'
+            """.trimIndent()
+        )
+
+        // root build.gradle - inject both AGP and manifest-guard via buildscript
+        dir.resolve("build.gradle").writeText(
+            """
+            buildscript {
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+                dependencies {
+                    classpath 'com.android.tools.build:gradle:7.1.3'
+                    classpath files('$escapedJar')
+                }
+            }
+            allprojects {
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+            }
+            """.trimIndent()
+        )
+
+        // gradle.properties
+        dir.resolve("gradle.properties").writeText(
+            """
+            android.useAndroidX=true
+            org.gradle.jvmargs=-Xmx1g
+            """.trimIndent()
+        )
+
+        // local.properties
+        val androidHome = System.getenv("ANDROID_HOME")
+            ?: System.getenv("ANDROID_SDK_ROOT")
+            ?: error("ANDROID_HOME or ANDROID_SDK_ROOT must be set")
+        dir.resolve("local.properties").writeText("sdk.dir=$androidHome")
+
+        // app module
+        val appDir = dir.resolve("app").apply { mkdirs() }
+
+        // app/build.gradle - use apply plugin instead of plugins {} block
+        appDir.resolve("build.gradle").writeText(
+            """
+            apply plugin: 'com.android.application'
+            apply plugin: 'io.github.fornewid.manifest-guard'
+
+            android {
+                compileSdkVersion 31
+                namespace "io.github.fornewid.test"
+                defaultConfig {
+                    minSdkVersion 23
+                    targetSdkVersion 31
+                }
+            }
+
+            $pluginConfig
+            """.trimIndent()
+        )
+
+        // AndroidManifest.xml
+        val srcDir = appDir.resolve("src/main").apply { mkdirs() }
+        srcDir.resolve("AndroidManifest.xml").writeText(manifestContent)
+    }
+
+    fun updateManifest(newContent: String) {
+        dir.resolve("app/src/main/AndroidManifest.xml").writeText(newContent)
+    }
+
+    fun readBaselineFile(path: String): String? {
+        val file = dir.resolve("app/$path")
+        return if (file.exists()) file.readText() else null
+    }
+
+    override fun close() {
+        dir.deleteRecursively()
+    }
+
+    companion object {
+        val DEFAULT_MANIFEST = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-permission android:name="android.permission.INTERNET" />
+                <application>
+                    <activity
+                        android:name=".MainActivity"
+                        android:exported="true">
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        val DEFAULT_PLUGIN_CONFIG = """
+            manifestGuard {
+                configuration("release") {
+                    permissions = true
+                    activities = true
+                    services = true
+                    receivers = true
+                    providers = true
+                    features = true
+                }
+            }
+        """.trimIndent()
+    }
+}

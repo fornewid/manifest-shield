@@ -62,6 +62,10 @@ dependencies {
   compileOnly("com.android.tools.build:gradle:7.1.0")
 }
 
+val deleteOldGradleTests = tasks.register<Delete>("deleteOldGradleTests") {
+  delete(layout.buildDirectory.file("gradleTest"))
+}
+
 @Suppress("UnstableApiUsage")
 testing {
   suites {
@@ -71,7 +75,42 @@ testing {
         implementation(libs.truth)
       }
     }
+
+    val gradleTest by registering(JvmTestSuite::class) {
+      useJUnitJupiter()
+      dependencies {
+        implementation(project())
+        implementation(libs.truth)
+      }
+
+      targets {
+        configureEach {
+          testTask.configure {
+            shouldRunAfter(test)
+            dependsOn(deleteOldGradleTests)
+            maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+          }
+        }
+      }
+    }
   }
+}
+
+gradlePlugin.testSourceSets(sourceSets.named("gradleTest").get())
+
+// Pass the plugin JAR path to gradleTest for buildscript classpath injection.
+// We avoid withPluginClasspath() due to AGP classloader isolation issues.
+afterEvaluate {
+  val jarTask = tasks.named("jar", Jar::class.java).get()
+  tasks.named("gradleTest", Test::class.java) {
+    dependsOn(jarTask)
+    systemProperty("pluginJar", jarTask.archiveFile.get().asFile.absolutePath)
+  }
+}
+
+@Suppress("UnstableApiUsage")
+tasks.named("check") {
+  dependsOn(testing.suites.named("gradleTest"))
 }
 
 tasks.register("printVersionName") {
