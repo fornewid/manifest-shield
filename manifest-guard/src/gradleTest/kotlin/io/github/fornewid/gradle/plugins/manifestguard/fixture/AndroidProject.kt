@@ -32,7 +32,7 @@ internal class AndroidProject(
                     mavenCentral()
                 }
                 dependencies {
-                    classpath 'com.android.tools.build:gradle:7.1.3'
+                    classpath 'com.android.tools.build:gradle:8.5.0'
                     classpath files('$escapedJar')
                 }
             }
@@ -69,11 +69,11 @@ internal class AndroidProject(
             apply plugin: 'io.github.fornewid.manifest-guard'
 
             android {
-                compileSdkVersion 31
+                compileSdk 34
                 namespace "io.github.fornewid.test"
                 defaultConfig {
-                    minSdkVersion 23
-                    targetSdkVersion 31
+                    minSdk 23
+                    targetSdk 34
                 }
             }
 

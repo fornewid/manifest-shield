@@ -1,4 +1,4 @@
-import com.vanniktech.maven.publish.SonatypeHost.S01
+import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -19,20 +19,16 @@ val VERSION_NAME: String by project
 version = VERSION_NAME
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    jvmTarget = "1.8"
-    // Because Gradle's Kotlin handling, this falls out of date quickly
-    apiVersion = "1.4"
-    languageVersion = "1.4"
-
-    @Suppress("SuspiciousCollectionReassignment")
-    freeCompilerArgs += "-Xsam-conversions=class"
+  compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+    apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_4)
+    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_4)
   }
 }
 
 java {
   toolchain {
-    languageVersion.set(JavaLanguageVersion.of(11))
+    languageVersion.set(JavaLanguageVersion.of(17))
   }
 }
 
@@ -53,8 +49,9 @@ gradlePlugin {
   }
 }
 
-mavenPublish {
-  sonatypeHost = S01
+mavenPublishing {
+  publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+  signAllPublications()
 }
 
 dependencies {
