@@ -2,8 +2,10 @@ package io.github.fornewid.gradle.plugins.manifestguard.internal.list
 
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardConfiguration
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardPlugin
+import io.github.fornewid.gradle.plugins.manifestguard.internal.GuardFlags
 import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestExtraction
 import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestVisitor
+import io.github.fornewid.gradle.plugins.manifestguard.internal.applyConfig
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestListDiff
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestListDiffResult
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestListDiffResult.BaselineCreated
@@ -24,7 +26,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
-internal abstract class ManifestGuardListTask : DefaultTask() {
+internal abstract class ManifestGuardListTask : DefaultTask(), GuardFlags {
 
     init {
         group = ManifestGuardPlugin.MANIFEST_GUARD_TASK_GROUP
@@ -42,38 +44,17 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
     @get:Input
     abstract val shouldBaseline: Property<Boolean>
 
-    @get:Input
-    abstract val guardSdk: Property<Boolean>
-
-    @get:Input
-    abstract val guardPermissions: Property<Boolean>
-
-    @get:Input
-    abstract val guardPermissionDeclarations: Property<Boolean>
-
-    @get:Input
-    abstract val guardActivities: Property<Boolean>
-
-    @get:Input
-    abstract val guardActivityAliases: Property<Boolean>
-
-    @get:Input
-    abstract val guardServices: Property<Boolean>
-
-    @get:Input
-    abstract val guardReceivers: Property<Boolean>
-
-    @get:Input
-    abstract val guardProviders: Property<Boolean>
-
-    @get:Input
-    abstract val guardFeatures: Property<Boolean>
-
-    @get:Input
-    abstract val guardIntentFilters: Property<Boolean>
-
-    @get:Input
-    abstract val guardStartup: Property<Boolean>
+    abstract override val guardSdk: Property<Boolean>
+    abstract override val guardPermissions: Property<Boolean>
+    abstract override val guardPermissionDeclarations: Property<Boolean>
+    abstract override val guardActivities: Property<Boolean>
+    abstract override val guardActivityAliases: Property<Boolean>
+    abstract override val guardServices: Property<Boolean>
+    abstract override val guardReceivers: Property<Boolean>
+    abstract override val guardProviders: Property<Boolean>
+    abstract override val guardFeatures: Property<Boolean>
+    abstract override val guardIntentFilters: Property<Boolean>
+    abstract override val guardStartup: Property<Boolean>
 
     @get:OutputDirectory
     abstract val baselineDir: DirectoryProperty
@@ -263,17 +244,7 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         this.configurationName.set(config.configurationName)
         this.projectPath.set(projectPath)
         this.shouldBaseline.set(shouldBaseline)
-        this.guardSdk.set(config.sdk)
-        this.guardPermissions.set(config.permissions)
-        this.guardPermissionDeclarations.set(config.permissionDeclarations)
-        this.guardActivities.set(config.activities)
-        this.guardActivityAliases.set(config.activityAliases)
-        this.guardServices.set(config.services)
-        this.guardReceivers.set(config.receivers)
-        this.guardProviders.set(config.providers)
-        this.guardFeatures.set(config.features)
-        this.guardIntentFilters.set(config.intentFilters)
-        this.guardStartup.set(config.startup)
+        applyConfig(config)
         this.baselineDir.set(baselineDirectory)
         this.filePrefix.set(filePrefix)
         this.allowedFilter.set(config.allowedFilter)
