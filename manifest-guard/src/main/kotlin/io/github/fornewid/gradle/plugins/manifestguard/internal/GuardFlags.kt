@@ -16,6 +16,9 @@ internal interface GuardFlags {
     val guardPermissions: Property<Boolean>
 
     @get:Input
+    val guardPermissionsSdk23: Property<Boolean>
+
+    @get:Input
     val guardPermissionDeclarations: Property<Boolean>
 
     @get:Input
@@ -41,11 +44,39 @@ internal interface GuardFlags {
 
     @get:Input
     val guardStartup: Property<Boolean>
+
+    @get:Input
+    val guardSupportsScreens: Property<Boolean>
+
+    @get:Input
+    val guardCompatibleScreens: Property<Boolean>
+
+    @get:Input
+    val guardUsesConfiguration: Property<Boolean>
+
+    @get:Input
+    val guardSupportsGlTexture: Property<Boolean>
+
+    @get:Input
+    val guardQueries: Property<Boolean>
+
+    @get:Input
+    val guardMetaData: Property<Boolean>
+
+    @get:Input
+    val guardUsesLibrary: Property<Boolean>
+
+    @get:Input
+    val guardUsesNativeLibrary: Property<Boolean>
+
+    @get:Input
+    val guardProfileable: Property<Boolean>
 }
 
 internal fun GuardFlags.applyConfig(config: ManifestGuardConfiguration) {
     guardSdk.set(config.sdk)
     guardPermissions.set(config.permissions)
+    guardPermissionsSdk23.set(config.permissionsSdk23)
     guardPermissionDeclarations.set(config.permissionDeclarations)
     guardActivities.set(config.activities)
     guardActivityAliases.set(config.activityAliases)
@@ -55,4 +86,13 @@ internal fun GuardFlags.applyConfig(config: ManifestGuardConfiguration) {
     guardFeatures.set(config.features)
     guardIntentFilters.set(config.intentFilters)
     guardStartup.set(config.startup)
+    guardSupportsScreens.set(config.supportsScreens)
+    guardCompatibleScreens.set(config.compatibleScreens)
+    guardUsesConfiguration.set(config.usesConfiguration)
+    guardSupportsGlTexture.set(config.supportsGlTexture)
+    guardQueries.set(config.queries)
+    guardMetaData.set(config.metaData)
+    guardUsesLibrary.set(config.usesLibrary)
+    guardUsesNativeLibrary.set(config.usesNativeLibrary)
+    guardProfileable.set(config.profileable)
 }

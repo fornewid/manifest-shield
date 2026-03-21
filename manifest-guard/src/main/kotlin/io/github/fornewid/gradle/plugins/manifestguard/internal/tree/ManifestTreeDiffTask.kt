@@ -57,6 +57,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask(), GuardFlags {
 
     abstract override val guardSdk: Property<Boolean>
     abstract override val guardPermissions: Property<Boolean>
+    abstract override val guardPermissionsSdk23: Property<Boolean>
     abstract override val guardPermissionDeclarations: Property<Boolean>
     abstract override val guardActivities: Property<Boolean>
     abstract override val guardActivityAliases: Property<Boolean>
@@ -66,6 +67,15 @@ internal abstract class ManifestTreeDiffTask : DefaultTask(), GuardFlags {
     abstract override val guardFeatures: Property<Boolean>
     abstract override val guardIntentFilters: Property<Boolean>
     abstract override val guardStartup: Property<Boolean>
+    abstract override val guardSupportsScreens: Property<Boolean>
+    abstract override val guardCompatibleScreens: Property<Boolean>
+    abstract override val guardUsesConfiguration: Property<Boolean>
+    abstract override val guardSupportsGlTexture: Property<Boolean>
+    abstract override val guardQueries: Property<Boolean>
+    abstract override val guardMetaData: Property<Boolean>
+    abstract override val guardUsesLibrary: Property<Boolean>
+    abstract override val guardUsesNativeLibrary: Property<Boolean>
+    abstract override val guardProfileable: Property<Boolean>
 
     @get:OutputDirectory
     abstract val baselineDir: DirectoryProperty

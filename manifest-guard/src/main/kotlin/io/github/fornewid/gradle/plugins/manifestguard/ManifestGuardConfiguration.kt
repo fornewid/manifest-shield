@@ -62,6 +62,46 @@ public open class ManifestGuardConfiguration @Inject constructor(
     @get:Input
     public var startup: Boolean = true
 
+    /** Guard uses-permission-sdk-23 declarations */
+    @get:Input
+    public var permissionsSdk23: Boolean = false
+
+    /** Guard supports-screens declarations */
+    @get:Input
+    public var supportsScreens: Boolean = false
+
+    /** Guard compatible-screens declarations */
+    @get:Input
+    public var compatibleScreens: Boolean = false
+
+    /** Guard uses-configuration declarations */
+    @get:Input
+    public var usesConfiguration: Boolean = false
+
+    /** Guard supports-gl-texture declarations */
+    @get:Input
+    public var supportsGlTexture: Boolean = false
+
+    /** Guard queries declarations */
+    @get:Input
+    public var queries: Boolean = false
+
+    /** Guard meta-data declarations (values redacted for non-primitives) */
+    @get:Input
+    public var metaData: Boolean = false
+
+    /** Guard uses-library declarations */
+    @get:Input
+    public var usesLibrary: Boolean = false
+
+    /** Guard uses-native-library declarations */
+    @get:Input
+    public var usesNativeLibrary: Boolean = false
+
+    /** Guard profileable declarations */
+    @get:Input
+    public var profileable: Boolean = false
+
     /** Enable tree format with library attribution from blame log */
     @get:Input
     public var tree: Boolean = false

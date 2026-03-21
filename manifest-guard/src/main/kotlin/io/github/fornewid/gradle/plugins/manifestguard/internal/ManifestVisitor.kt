@@ -4,9 +4,15 @@ import io.github.fornewid.gradle.plugins.manifestguard.models.ComponentType
 import io.github.fornewid.gradle.plugins.manifestguard.models.IntentFilterInfo
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestFeature
+import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestLibrary
+import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestMetaData
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestPermission
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestPermissionDeclaration
+import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestProfileable
+import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestQuery
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestSdk
+import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestSupportsScreens
+import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestUsesConfiguration
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Element
@@ -15,13 +21,23 @@ import org.w3c.dom.NodeList
 internal data class ManifestExtraction(
     val sdk: ManifestSdk?,
     val permissions: List<ManifestPermission>,
+    val permissionsSdk23: List<ManifestPermission>,
     val permissionDeclarations: List<ManifestPermissionDeclaration>,
+    val features: List<ManifestFeature>,
+    val supportsScreens: ManifestSupportsScreens?,
+    val compatibleScreens: List<String>,
+    val usesConfiguration: ManifestUsesConfiguration?,
+    val supportsGlTextures: List<ManifestFeature>,
+    val queries: ManifestQuery?,
     val activities: List<ManifestComponent>,
     val activityAliases: List<ManifestComponent>,
+    val metaData: List<ManifestMetaData>,
     val services: List<ManifestComponent>,
     val receivers: List<ManifestComponent>,
     val providers: List<ManifestComponent>,
-    val features: List<ManifestFeature>,
+    val usesLibraries: List<ManifestLibrary>,
+    val usesNativeLibraries: List<ManifestLibrary>,
+    val profileable: ManifestProfileable?,
     val startupInitializers: List<String>,
 )
 
@@ -40,57 +56,75 @@ internal object ManifestVisitor {
             .toElementList()
             .firstOrNull()
             ?.let { node ->
-                val minSdk = node.getAttributeNS(ANDROID_NS, "minSdkVersion")
-                    .takeIf { it.isNotBlank() }?.toIntOrNull()
-                val targetSdk = node.getAttributeNS(ANDROID_NS, "targetSdkVersion")
-                    .takeIf { it.isNotBlank() }?.toIntOrNull()
+                val minSdk = node.attrNS("minSdkVersion")?.toIntOrNull()
+                val targetSdk = node.attrNS("targetSdkVersion")?.toIntOrNull()
                 if (minSdk != null || targetSdk != null) ManifestSdk(minSdk, targetSdk) else null
             }
 
-        val permissions = root.getElementsByTagName("uses-permission")
-            .toElementList()
-            .mapNotNull { node ->
-                val name = node.getAttributeNS(ANDROID_NS, "name")
-                if (name.isNotBlank()) {
-                    val maxSdk = node.getAttributeNS(ANDROID_NS, "maxSdkVersion")
-                        .takeIf { it.isNotBlank() }?.toIntOrNull()
-                    ManifestPermission(name = name, maxSdkVersion = maxSdk)
-                } else null
-            }
-            .distinct()
-            .sortedBy { it.name }
+        val permissions = root.parsePermissions("uses-permission")
+        val permissionsSdk23 = root.parsePermissions("uses-permission-sdk-23")
 
         val permissionDeclarations = root.getElementsByTagName("permission")
             .toElementList()
             .mapNotNull { node ->
-                val name = node.getAttributeNS(ANDROID_NS, "name")
-                if (name.isNotBlank()) {
-                    val protectionLevel = node.getAttributeNS(ANDROID_NS, "protectionLevel")
-                        .takeIf { it.isNotBlank() }
-                    ManifestPermissionDeclaration(name = name, protectionLevel = protectionLevel)
-                } else null
+                val name = node.attrNS("name") ?: return@mapNotNull null
+                ManifestPermissionDeclaration(name = name, protectionLevel = node.attrNS("protectionLevel"))
             }
-            .distinct()
-            .sortedBy { it.name }
+            .distinct().sortedBy { it.name }
 
-        val features = root.getElementsByTagName("uses-feature")
-            .toElementList()
-            .mapNotNull { node ->
-                val name = node.getAttributeNS(ANDROID_NS, "name")
-                val glEsVersion = node.getAttributeNS(ANDROID_NS, "glEsVersion")
-                val required = node.getAttributeNS(ANDROID_NS, "required")
-                val featureName = when {
-                    name.isNotBlank() -> name
-                    glEsVersion.isNotBlank() -> "glEsVersion=$glEsVersion"
-                    else -> return@mapNotNull null
-                }
-                ManifestFeature(
-                    name = featureName,
-                    required = required != "false",
+        val features = root.parseFeatures()
+
+        val supportsScreens = root.getElementsByTagName("supports-screens")
+            .toElementList().firstOrNull()?.let { node ->
+                ManifestSupportsScreens(
+                    smallScreens = node.attrNS("smallScreens")?.toBooleanOrNull(),
+                    normalScreens = node.attrNS("normalScreens")?.toBooleanOrNull(),
+                    largeScreens = node.attrNS("largeScreens")?.toBooleanOrNull(),
+                    xlargeScreens = node.attrNS("xlargeScreens")?.toBooleanOrNull(),
+                    requiresSmallestWidthDp = node.attrNS("requiresSmallestWidthDp")?.toIntOrNull(),
+                    compatibleWidthLimitDp = node.attrNS("compatibleWidthLimitDp")?.toIntOrNull(),
+                    largestWidthLimitDp = node.attrNS("largestWidthLimitDp")?.toIntOrNull(),
                 )
             }
-            .distinct()
-            .sortedBy { it.name }
+
+        val compatibleScreens = root.getElementsByTagName("compatible-screens")
+            .toElementList().firstOrNull()?.let { node ->
+                node.getElementsByTagName("screen").toElementList().map { screen ->
+                    val size = screen.attrNS("screenSize") ?: "?"
+                    val density = screen.attrNS("screenDensity") ?: "?"
+                    "$size/$density"
+                }.sorted()
+            }.orEmpty()
+
+        val usesConfiguration = root.getElementsByTagName("uses-configuration")
+            .toElementList().firstOrNull()?.let { node ->
+                ManifestUsesConfiguration(
+                    reqTouchScreen = node.attrNS("reqTouchScreen"),
+                    reqKeyboardType = node.attrNS("reqKeyboardType"),
+                    reqHardKeyboard = node.attrNS("reqHardKeyboard")?.toBooleanOrNull(),
+                    reqNavigation = node.attrNS("reqNavigation"),
+                    reqFiveWayNav = node.attrNS("reqFiveWayNav")?.toBooleanOrNull(),
+                )
+            }
+
+        val supportsGlTextures = root.getElementsByTagName("supports-gl-texture")
+            .toElementList()
+            .mapNotNull { node ->
+                val name = node.attrNS("name") ?: return@mapNotNull null
+                ManifestFeature(name = name, required = true)
+            }
+            .distinct().sortedBy { it.name }
+
+        val queries = root.getElementsByTagName("queries")
+            .toElementList().firstOrNull()?.let { node ->
+                val packages = node.getElementsByTagName("package").toElementList()
+                    .mapNotNull { it.attrNS("name") }
+                val intents = node.getElementsByTagName("intent").toElementList()
+                    .map { it.parseIntentFilters().firstOrNull() ?: IntentFilterInfo(emptyList(), emptyList(), emptyList()) }
+                val providers = node.getElementsByTagName("provider").toElementList()
+                    .mapNotNull { it.attrNS("authorities") }
+                ManifestQuery(packages = packages, intents = intents, providers = providers)
+            }
 
         val applicationNodes = root.getElementsByTagName("application")
         val application = if (applicationNodes.length > 0) applicationNodes.item(0) as Element else null
@@ -100,72 +134,135 @@ internal object ManifestVisitor {
         val services = application?.parseComponents(ComponentType.SERVICE).orEmpty()
         val receivers = application?.parseComponents(ComponentType.RECEIVER).orEmpty()
         val providers = application?.parseProviders().orEmpty()
+
+        val metaData = application?.getElementsByTagName("meta-data")
+            ?.toElementList()
+            ?.mapNotNull { node ->
+                val name = node.attrNS("name") ?: return@mapNotNull null
+                val value = node.attrNS("value")
+                ManifestMetaData(name = name, value = value)
+            }
+            ?.distinct()?.sortedBy { it.name }
+            .orEmpty()
+
+        val usesLibraries = application?.parseLibraries("uses-library").orEmpty()
+        val usesNativeLibraries = application?.parseLibraries("uses-native-library").orEmpty()
+
+        val profileable = application?.getElementsByTagName("profileable")
+            ?.toElementList()?.firstOrNull()?.let { node ->
+                ManifestProfileable(
+                    shell = node.attrNS("shell")?.toBooleanOrNull(),
+                    enabled = node.attrNS("enabled")?.toBooleanOrNull(),
+                )
+            }
+
         val startupInitializers = application?.parseStartupInitializers().orEmpty()
 
         return ManifestExtraction(
             sdk = sdk,
             permissions = permissions,
+            permissionsSdk23 = permissionsSdk23,
             permissionDeclarations = permissionDeclarations,
+            features = features,
+            supportsScreens = supportsScreens,
+            compatibleScreens = compatibleScreens,
+            usesConfiguration = usesConfiguration,
+            supportsGlTextures = supportsGlTextures,
+            queries = queries,
             activities = activities,
             activityAliases = activityAliases,
+            metaData = metaData,
             services = services,
             receivers = receivers,
             providers = providers,
-            features = features,
+            usesLibraries = usesLibraries,
+            usesNativeLibraries = usesNativeLibraries,
+            profileable = profileable,
             startupInitializers = startupInitializers,
         )
+    }
+
+    private fun Element.parsePermissions(tagName: String): List<ManifestPermission> {
+        return getElementsByTagName(tagName)
+            .toElementList()
+            .mapNotNull { node ->
+                val name = node.attrNS("name") ?: return@mapNotNull null
+                val maxSdk = node.attrNS("maxSdkVersion")?.toIntOrNull()
+                ManifestPermission(name = name, maxSdkVersion = maxSdk)
+            }
+            .distinct().sortedBy { it.name }
+    }
+
+    private fun Element.parseFeatures(): List<ManifestFeature> {
+        return getElementsByTagName("uses-feature")
+            .toElementList()
+            .mapNotNull { node ->
+                val name = node.attrNS("name")
+                val glEsVersion = node.attrNS("glEsVersion")
+                val required = node.getAttributeNS(ANDROID_NS, "required")
+                val featureName = when {
+                    name != null -> name
+                    glEsVersion != null -> "glEsVersion=$glEsVersion"
+                    else -> return@mapNotNull null
+                }
+                ManifestFeature(name = featureName, required = required != "false")
+            }
+            .distinct().sortedBy { it.name }
     }
 
     private fun Element.parseComponents(type: ComponentType): List<ManifestComponent> {
         return getElementsByTagName(type.tagName)
             .toElementList()
             .mapNotNull { node ->
-                val name = node.getAttributeNS(ANDROID_NS, "name")
-                if (name.isNotBlank()) {
-                    val exportedAttr = node.getAttributeNS(ANDROID_NS, "exported")
-                    val targetActivity = if (type == ComponentType.ACTIVITY_ALIAS) {
-                        node.getAttributeNS(ANDROID_NS, "targetActivity").takeIf { it.isNotBlank() }
-                    } else null
-                    ManifestComponent(
-                        name = name,
-                        type = type,
-                        exported = when (exportedAttr) {
-                            "true" -> true
-                            "false" -> false
-                            else -> null
-                        },
-                        targetActivity = targetActivity,
-                        intentFilters = node.parseIntentFilters(),
-                    )
+                val name = node.attrNS("name") ?: return@mapNotNull null
+                val exportedAttr = node.getAttributeNS(ANDROID_NS, "exported")
+                val targetActivity = if (type == ComponentType.ACTIVITY_ALIAS) {
+                    node.attrNS("targetActivity")
                 } else null
+                ManifestComponent(
+                    name = name,
+                    type = type,
+                    exported = when (exportedAttr) {
+                        "true" -> true
+                        "false" -> false
+                        else -> null
+                    },
+                    targetActivity = targetActivity,
+                    intentFilters = node.parseIntentFilters(),
+                )
             }
-            .distinct()
-            .sortedBy { it.name }
+            .distinct().sortedBy { it.name }
     }
 
     private fun Element.parseProviders(): List<ManifestComponent> {
         return getElementsByTagName("provider")
             .toElementList()
             .mapNotNull { node ->
-                val name = node.getAttributeNS(ANDROID_NS, "name")
-                if (name.isNotBlank()) {
-                    val exportedAttr = node.getAttributeNS(ANDROID_NS, "exported")
-                    val authorities = node.getAttributeNS(ANDROID_NS, "authorities")
-                        .takeIf { it.isNotBlank() }
-                    ManifestComponent(
-                        name = name,
-                        type = ComponentType.PROVIDER,
-                        exported = when (exportedAttr) {
-                            "true" -> true
-                            "false" -> false
-                            else -> null
-                        },
-                        authorities = authorities,
-                    )
-                } else null
+                val name = node.attrNS("name") ?: return@mapNotNull null
+                val exportedAttr = node.getAttributeNS(ANDROID_NS, "exported")
+                ManifestComponent(
+                    name = name,
+                    type = ComponentType.PROVIDER,
+                    exported = when (exportedAttr) {
+                        "true" -> true
+                        "false" -> false
+                        else -> null
+                    },
+                    authorities = node.attrNS("authorities"),
+                )
             }
-            .distinct()
-            .sortedBy { it.name }
+            .distinct().sortedBy { it.name }
+    }
+
+    private fun Element.parseLibraries(tagName: String): List<ManifestLibrary> {
+        return getElementsByTagName(tagName)
+            .toElementList()
+            .mapNotNull { node ->
+                val name = node.attrNS("name") ?: return@mapNotNull null
+                val required = node.getAttributeNS(ANDROID_NS, "required")
+                ManifestLibrary(name = name, required = required != "false")
+            }
+            .distinct().sortedBy { it.name }
     }
 
     private fun Element.parseStartupInitializers(): List<String> {
@@ -180,9 +277,7 @@ internal object ManifestVisitor {
                     .filter { meta ->
                         meta.getAttributeNS(ANDROID_NS, "value") == "androidx.startup"
                     }
-                    .mapNotNull { meta ->
-                        meta.getAttributeNS(ANDROID_NS, "name").takeIf { it.isNotBlank() }
-                    }
+                    .mapNotNull { meta -> meta.attrNS("name") }
             }
             .sorted()
     }
@@ -192,32 +287,23 @@ internal object ManifestVisitor {
             .toElementList()
             .map { filter ->
                 val actions = filter.getElementsByTagName("action")
-                    .toElementList()
-                    .mapNotNull { it.getAttributeNS(ANDROID_NS, "name").takeIf(String::isNotBlank) }
-                    .sorted()
-
+                    .toElementList().mapNotNull { it.attrNS("name") }.sorted()
                 val categories = filter.getElementsByTagName("category")
-                    .toElementList()
-                    .mapNotNull { it.getAttributeNS(ANDROID_NS, "name").takeIf(String::isNotBlank) }
-                    .sorted()
-
+                    .toElementList().mapNotNull { it.attrNS("name") }.sorted()
                 val dataSpecs = filter.getElementsByTagName("data")
                     .toElementList()
                     .map { data ->
-                        val scheme = data.getAttributeNS(ANDROID_NS, "scheme")
-                        val host = data.getAttributeNS(ANDROID_NS, "host")
-                        val port = data.getAttributeNS(ANDROID_NS, "port")
-                        val path = data.getAttributeNS(ANDROID_NS, "path")
-                        val pathPrefix = data.getAttributeNS(ANDROID_NS, "pathPrefix")
-                        val pathPattern = data.getAttributeNS(ANDROID_NS, "pathPattern")
-                        val mimeType = data.getAttributeNS(ANDROID_NS, "mimeType")
-                        buildDataSpec(scheme, host, port, path, pathPrefix, pathPattern, mimeType)
+                        buildDataSpec(
+                            data.attrNS("scheme") ?: "", data.attrNS("host") ?: "",
+                            data.attrNS("port") ?: "", data.attrNS("path") ?: "",
+                            data.attrNS("pathPrefix") ?: "", data.attrNS("pathPattern") ?: "",
+                            data.attrNS("mimeType") ?: "",
+                        )
                     }
-                    .filter { it.isNotBlank() }
-                    .sorted()
-
+                    .filter { it.isNotBlank() }.sorted()
                 IntentFilterInfo(actions = actions, categories = categories, dataSpecs = dataSpecs)
             }
+            .sortedBy { it.actions.firstOrNull() ?: "" }
     }
 
     private fun buildDataSpec(
@@ -245,6 +331,18 @@ internal object ManifestVisitor {
         } else if (mimeType.isNotBlank()) {
             append(mimeType)
         }
+    }
+
+    /** Returns the attribute value or null if blank/empty */
+    private fun Element.attrNS(name: String): String? {
+        val value = getAttributeNS(ANDROID_NS, name)
+        return value.takeIf { it.isNotBlank() }
+    }
+
+    private fun String.toBooleanOrNull(): Boolean? = when (this) {
+        "true" -> true
+        "false" -> false
+        else -> null
     }
 
     private fun NodeList.toElementList(): List<Element> {

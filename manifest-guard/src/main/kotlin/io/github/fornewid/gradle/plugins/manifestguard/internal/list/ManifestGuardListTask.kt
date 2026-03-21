@@ -46,6 +46,7 @@ internal abstract class ManifestGuardListTask : DefaultTask(), GuardFlags {
 
     abstract override val guardSdk: Property<Boolean>
     abstract override val guardPermissions: Property<Boolean>
+    abstract override val guardPermissionsSdk23: Property<Boolean>
     abstract override val guardPermissionDeclarations: Property<Boolean>
     abstract override val guardActivities: Property<Boolean>
     abstract override val guardActivityAliases: Property<Boolean>
@@ -55,6 +56,15 @@ internal abstract class ManifestGuardListTask : DefaultTask(), GuardFlags {
     abstract override val guardFeatures: Property<Boolean>
     abstract override val guardIntentFilters: Property<Boolean>
     abstract override val guardStartup: Property<Boolean>
+    abstract override val guardSupportsScreens: Property<Boolean>
+    abstract override val guardCompatibleScreens: Property<Boolean>
+    abstract override val guardUsesConfiguration: Property<Boolean>
+    abstract override val guardSupportsGlTexture: Property<Boolean>
+    abstract override val guardQueries: Property<Boolean>
+    abstract override val guardMetaData: Property<Boolean>
+    abstract override val guardUsesLibrary: Property<Boolean>
+    abstract override val guardUsesNativeLibrary: Property<Boolean>
+    abstract override val guardProfileable: Property<Boolean>
 
     @get:OutputDirectory
     abstract val baselineDir: DirectoryProperty
@@ -140,8 +150,10 @@ internal abstract class ManifestGuardListTask : DefaultTask(), GuardFlags {
         baselineMap: (String) -> String?,
         showIntentFilters: Boolean,
     ): String = buildString {
-        val manifestLevel = listOf("uses-sdk", "uses-feature", "uses-permission", "permission")
-        val applicationLevel = listOf("activity", "activity-alias", "service", "receiver", "provider", "androidx.startup")
+        val manifestLevel = listOf("uses-sdk", "uses-feature", "uses-permission", "uses-permission-sdk-23", "permission",
+            "supports-screens", "compatible-screens", "uses-configuration", "supports-gl-texture", "queries")
+        val applicationLevel = listOf("activity", "activity-alias", "meta-data", "service", "receiver",
+            "profileable", "provider", "uses-library", "uses-native-library", "androidx.startup")
 
         // Collect all categories with their entries
         data class Section(val tag: String, val lines: List<String>)
@@ -164,8 +176,29 @@ internal abstract class ManifestGuardListTask : DefaultTask(), GuardFlags {
         if (guardPermissions.get() && manifest.permissions.isNotEmpty()) {
             sections.add(Section("uses-permission", manifest.permissions.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
         }
+        if (guardPermissionsSdk23.get() && manifest.permissionsSdk23.isNotEmpty()) {
+            sections.add(Section("uses-permission-sdk-23", manifest.permissionsSdk23.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        }
         if (guardPermissionDeclarations.get() && manifest.permissionDeclarations.isNotEmpty()) {
             sections.add(Section("permission", manifest.permissionDeclarations.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        }
+        if (guardSupportsScreens.get() && manifest.supportsScreens != null) {
+            val lines = manifest.supportsScreens!!.toBaselineLines()
+            if (lines.isNotEmpty()) sections.add(Section("supports-screens", lines))
+        }
+        if (guardCompatibleScreens.get() && manifest.compatibleScreens.isNotEmpty()) {
+            sections.add(Section("compatible-screens", manifest.compatibleScreens))
+        }
+        if (guardUsesConfiguration.get() && manifest.usesConfiguration != null) {
+            val lines = manifest.usesConfiguration!!.toBaselineLines()
+            if (lines.isNotEmpty()) sections.add(Section("uses-configuration", lines))
+        }
+        if (guardSupportsGlTexture.get() && manifest.supportsGlTextures.isNotEmpty()) {
+            sections.add(Section("supports-gl-texture", manifest.supportsGlTextures.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        }
+        if (guardQueries.get() && manifest.queries != null) {
+            val lines = manifest.queries!!.toBaselineLines()
+            if (lines.isNotEmpty()) sections.add(Section("queries", lines))
         }
 
         // Application-level categories
@@ -198,8 +231,21 @@ internal abstract class ManifestGuardListTask : DefaultTask(), GuardFlags {
         if (guardReceivers.get() && manifest.receivers.isNotEmpty()) {
             sections.add(Section("receiver", componentLines(manifest.receivers)))
         }
+        if (guardMetaData.get() && manifest.metaData.isNotEmpty()) {
+            sections.add(Section("meta-data", manifest.metaData.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        }
         if (guardProviders.get() && manifest.providers.isNotEmpty()) {
             sections.add(Section("provider", componentLines(manifest.providers)))
+        }
+        if (guardUsesLibrary.get() && manifest.usesLibraries.isNotEmpty()) {
+            sections.add(Section("uses-library", manifest.usesLibraries.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        }
+        if (guardUsesNativeLibrary.get() && manifest.usesNativeLibraries.isNotEmpty()) {
+            sections.add(Section("uses-native-library", manifest.usesNativeLibraries.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        }
+        if (guardProfileable.get() && manifest.profileable != null) {
+            val lines = manifest.profileable!!.toBaselineLines()
+            if (lines.isNotEmpty()) sections.add(Section("profileable", lines))
         }
         if (guardStartup.get() && manifest.startupInitializers.isNotEmpty()) {
             sections.add(Section("androidx.startup", manifest.startupInitializers))
