@@ -1,12 +1,12 @@
 package io.github.fornewid.gradle.plugins.manifestguard.models
 
-internal data class ManifestPermission(
+internal data class ManifestPermissionDeclaration(
     override val name: String,
-    val maxSdkVersion: Int? = null,
+    val protectionLevel: String? = null,
 ) : ManifestEntry {
 
     override fun toBaselineString(): String = buildString {
         append(name)
-        if (maxSdkVersion != null) append(" (maxSdkVersion=$maxSdkVersion)")
+        if (protectionLevel != null) append(" (protectionLevel=$protectionLevel)")
     }
 }

@@ -92,7 +92,7 @@ internal class ManifestVisitorTest {
         val result = ManifestVisitor.parse(manifestFile)
 
         assertThat(result.providers).hasSize(1)
-        assertThat(result.providers[0].toBaselineString()).isEqualTo("com.example.app.MyContentProvider (exported)")
+        assertThat(result.providers[0].toBaselineString()).isEqualTo("com.example.app.MyContentProvider (exported, authorities=com.example.app.provider)")
     }
 
     @Test

@@ -52,7 +52,13 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
     abstract val guardPermissions: Property<Boolean>
 
     @get:Input
+    abstract val guardPermissionDeclarations: Property<Boolean>
+
+    @get:Input
     abstract val guardActivities: Property<Boolean>
+
+    @get:Input
+    abstract val guardActivityAliases: Property<Boolean>
 
     @get:Input
     abstract val guardServices: Property<Boolean>
@@ -97,12 +103,14 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
             emptyMap()
         }
 
-        // Collect categories in document order: uses-feature, uses-permission, activity, service, receiver, provider
+        // Collect categories in document order
         // Triple: (tag, elementType for sourceMap lookup, entries)
         val categories = mutableListOf<Triple<String, String, List<ManifestEntry>>>()
         if (guardFeatures.get()) categories.add(Triple("uses-feature", "uses-feature", manifest.features))
         if (guardPermissions.get()) categories.add(Triple("uses-permission", "uses-permission", manifest.permissions))
+        if (guardPermissionDeclarations.get()) categories.add(Triple("permission", "permission", manifest.permissionDeclarations))
         if (guardActivities.get()) categories.add(Triple("activity", "activity", manifest.activities))
+        if (guardActivityAliases.get()) categories.add(Triple("activity-alias", "activity-alias", manifest.activityAliases))
         if (guardServices.get()) categories.add(Triple("service", "service", manifest.services))
         if (guardReceivers.get()) categories.add(Triple("receiver", "receiver", manifest.receivers))
         if (guardProviders.get()) categories.add(Triple("provider", "provider", manifest.providers))
@@ -152,7 +160,9 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         this.projectPath.set(projectPath)
         this.shouldBaseline.set(shouldBaseline)
         this.guardPermissions.set(config.permissions)
+        this.guardPermissionDeclarations.set(config.permissionDeclarations)
         this.guardActivities.set(config.activities)
+        this.guardActivityAliases.set(config.activityAliases)
         this.guardServices.set(config.services)
         this.guardReceivers.set(config.receivers)
         this.guardProviders.set(config.providers)

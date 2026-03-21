@@ -2,6 +2,7 @@ package io.github.fornewid.gradle.plugins.manifestguard.internal.list
 
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardConfiguration
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardPlugin
+import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestExtraction
 import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestVisitor
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestListDiff
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestListDiffResult
@@ -11,6 +12,7 @@ import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestLi
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Messaging
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.OutputFileUtils
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Tasks.declareCompatibilities
+import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestEntry
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -41,10 +43,19 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
     abstract val shouldBaseline: Property<Boolean>
 
     @get:Input
+    abstract val guardSdk: Property<Boolean>
+
+    @get:Input
     abstract val guardPermissions: Property<Boolean>
 
     @get:Input
+    abstract val guardPermissionDeclarations: Property<Boolean>
+
+    @get:Input
     abstract val guardActivities: Property<Boolean>
+
+    @get:Input
+    abstract val guardActivityAliases: Property<Boolean>
 
     @get:Input
     abstract val guardServices: Property<Boolean>
@@ -57,6 +68,12 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
 
     @get:Input
     abstract val guardFeatures: Property<Boolean>
+
+    @get:Input
+    abstract val guardIntentFilters: Property<Boolean>
+
+    @get:Input
+    abstract val guardStartup: Property<Boolean>
 
     @get:OutputDirectory
     abstract val baselineDir: DirectoryProperty
@@ -80,17 +97,11 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         val baseline = shouldBaseline.get()
         val dir = baselineDir.get()
         val prefix = filePrefix.get()
+        val showIntentFilters = guardIntentFilters.get()
 
-        // Check for disallowed entries across all categories
-        val allEntries = mutableListOf<Pair<String, List<ManifestEntry>>>()
-        if (guardFeatures.get()) allEntries.add("uses-feature" to manifest.features)
-        if (guardPermissions.get()) allEntries.add("uses-permission" to manifest.permissions)
-        if (guardActivities.get()) allEntries.add("activity" to manifest.activities)
-        if (guardServices.get()) allEntries.add("service" to manifest.services)
-        if (guardReceivers.get()) allEntries.add("receiver" to manifest.receivers)
-        if (guardProviders.get()) allEntries.add("provider" to manifest.providers)
-
-        for ((category, entries) in allEntries) {
+        // Check for disallowed entries across all entry categories
+        val entryCategories = collectEntryCategories(manifest)
+        for ((category, entries) in entryCategories) {
             val disallowed = entries.filter { !filter(it.name) }
             if (disallowed.isNotEmpty()) {
                 throw GradleException(buildString {
@@ -102,8 +113,7 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
             }
         }
 
-        // Build merged content with sections
-        val reportContent = buildMergedContent(allEntries, mapper)
+        val reportContent = buildMergedContent(manifest, mapper, showIntentFilters)
 
         val baselineFile = OutputFileUtils.baselineFile(dir, prefix)
 
@@ -131,41 +141,112 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         }
     }
 
+    private fun collectEntryCategories(manifest: ManifestExtraction): List<Pair<String, List<ManifestEntry>>> {
+        val entries = mutableListOf<Pair<String, List<ManifestEntry>>>()
+        if (guardFeatures.get()) entries.add("uses-feature" to manifest.features)
+        if (guardPermissions.get()) entries.add("uses-permission" to manifest.permissions)
+        if (guardPermissionDeclarations.get()) entries.add("permission" to manifest.permissionDeclarations)
+        if (guardActivities.get()) entries.add("activity" to manifest.activities)
+        if (guardActivityAliases.get()) entries.add("activity-alias" to manifest.activityAliases)
+        if (guardServices.get()) entries.add("service" to manifest.services)
+        if (guardReceivers.get()) entries.add("receiver" to manifest.receivers)
+        if (guardProviders.get()) entries.add("provider" to manifest.providers)
+        return entries
+    }
+
     private fun buildMergedContent(
-        categories: List<Pair<String, List<ManifestEntry>>>,
+        manifest: ManifestExtraction,
         baselineMap: (String) -> String?,
+        showIntentFilters: Boolean,
     ): String = buildString {
-        val manifestLevel = listOf("uses-feature", "uses-permission")
-        val applicationLevel = listOf("activity", "service", "receiver", "provider")
+        val manifestLevel = listOf("uses-sdk", "uses-feature", "uses-permission", "permission")
+        val applicationLevel = listOf("activity", "activity-alias", "service", "receiver", "provider", "androidx.startup")
 
-        val manifestCategories = categories.filter { it.first in manifestLevel && it.second.isNotEmpty() }
-        val appCategories = categories.filter { it.first in applicationLevel && it.second.isNotEmpty() }
+        // Collect all categories with their entries
+        data class Section(val tag: String, val lines: List<String>)
 
-        if (manifestCategories.isNotEmpty()) {
+        val sections = mutableListOf<Section>()
+
+        // uses-sdk (special: not ManifestEntry based)
+        val sdk = manifest.sdk
+        if (guardSdk.get() && sdk != null) {
+            val sdkLines = mutableListOf<String>()
+            sdk.minSdkVersion?.let { sdkLines.add("minSdkVersion=$it") }
+            sdk.targetSdkVersion?.let { sdkLines.add("targetSdkVersion=$it") }
+            if (sdkLines.isNotEmpty()) sections.add(Section("uses-sdk", sdkLines))
+        }
+
+        // Entry-based manifest-level categories
+        if (guardFeatures.get() && manifest.features.isNotEmpty()) {
+            sections.add(Section("uses-feature", manifest.features.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        }
+        if (guardPermissions.get() && manifest.permissions.isNotEmpty()) {
+            sections.add(Section("uses-permission", manifest.permissions.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        }
+        if (guardPermissionDeclarations.get() && manifest.permissionDeclarations.isNotEmpty()) {
+            sections.add(Section("permission", manifest.permissionDeclarations.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        }
+
+        // Application-level categories
+        fun componentLines(components: List<ManifestComponent>): List<String> {
+            val lines = mutableListOf<String>()
+            for (comp in components.sortedBy { it.name }) {
+                val line = baselineMap(comp.toBaselineString()) ?: continue
+                lines.add(line)
+                if (showIntentFilters && comp.intentFilters.isNotEmpty()) {
+                    for (filter in comp.intentFilters) {
+                        lines.add("  intent-filter:")
+                        filter.actions.forEach { lines.add("    action: $it") }
+                        filter.categories.forEach { lines.add("    category: $it") }
+                        filter.dataSpecs.forEach { lines.add("    data: $it") }
+                    }
+                }
+            }
+            return lines
+        }
+
+        if (guardActivities.get() && manifest.activities.isNotEmpty()) {
+            sections.add(Section("activity", componentLines(manifest.activities)))
+        }
+        if (guardActivityAliases.get() && manifest.activityAliases.isNotEmpty()) {
+            sections.add(Section("activity-alias", componentLines(manifest.activityAliases)))
+        }
+        if (guardServices.get() && manifest.services.isNotEmpty()) {
+            sections.add(Section("service", componentLines(manifest.services)))
+        }
+        if (guardReceivers.get() && manifest.receivers.isNotEmpty()) {
+            sections.add(Section("receiver", componentLines(manifest.receivers)))
+        }
+        if (guardProviders.get() && manifest.providers.isNotEmpty()) {
+            sections.add(Section("provider", componentLines(manifest.providers)))
+        }
+        if (guardStartup.get() && manifest.startupInitializers.isNotEmpty()) {
+            sections.add(Section("androidx.startup", manifest.startupInitializers))
+        }
+
+        // Render
+        val manifestSections = sections.filter { it.tag in manifestLevel }
+        val appSections = sections.filter { it.tag in applicationLevel }
+
+        if (manifestSections.isNotEmpty()) {
             appendLine("<manifest>")
-            for ((i, pair) in manifestCategories.withIndex()) {
-                val (tag, entries) = pair
-                appendLine("$tag:")
-                entries.mapNotNull { baselineMap(it.toBaselineString()) }
-                    .sorted()
-                    .forEach { appendLine("  $it") }
-                if (i < manifestCategories.size - 1) appendLine()
+            for ((i, section) in manifestSections.withIndex()) {
+                appendLine("${section.tag}:")
+                section.lines.forEach { appendLine("  $it") }
+                if (i < manifestSections.size - 1) appendLine()
             }
         }
 
-        if (manifestCategories.isNotEmpty() && appCategories.isNotEmpty()) {
+        if (manifestSections.isNotEmpty() && appSections.isNotEmpty()) {
             appendLine()
         }
 
-        if (appCategories.isNotEmpty()) {
+        if (appSections.isNotEmpty()) {
             appendLine("<application>")
-            for ((i, pair) in appCategories.withIndex()) {
-                val (tag, entries) = pair
-                appendLine("$tag:")
-                entries.mapNotNull { baselineMap(it.toBaselineString()) }
-                    .sorted()
-                    .forEach { appendLine("  $it") }
-                if (i < appCategories.size - 1) appendLine()
+            for ((i, section) in appSections.withIndex()) {
+                appendLine("${section.tag}:")
+                section.lines.forEach { appendLine("  $it") }
+                if (i < appSections.size - 1) appendLine()
             }
         }
     }
@@ -182,12 +263,17 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         this.configurationName.set(config.configurationName)
         this.projectPath.set(projectPath)
         this.shouldBaseline.set(shouldBaseline)
+        this.guardSdk.set(config.sdk)
         this.guardPermissions.set(config.permissions)
+        this.guardPermissionDeclarations.set(config.permissionDeclarations)
         this.guardActivities.set(config.activities)
+        this.guardActivityAliases.set(config.activityAliases)
         this.guardServices.set(config.services)
         this.guardReceivers.set(config.receivers)
         this.guardProviders.set(config.providers)
         this.guardFeatures.set(config.features)
+        this.guardIntentFilters.set(config.intentFilters)
+        this.guardStartup.set(config.startup)
         this.baselineDir.set(baselineDirectory)
         this.filePrefix.set(filePrefix)
         this.allowedFilter.set(config.allowedFilter)

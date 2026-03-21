@@ -1,24 +1,34 @@
 public class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuardConfiguration : org/gradle/api/Named {
 	public fun <init> (Ljava/lang/String;)V
 	public final fun getActivities ()Z
+	public final fun getActivityAliases ()Z
 	public final fun getAllowedFilter ()Lkotlin/jvm/functions/Function1;
 	public final fun getBaselineMap ()Lkotlin/jvm/functions/Function1;
 	public final fun getConfigurationName ()Ljava/lang/String;
 	public final fun getFeatures ()Z
+	public final fun getIntentFilters ()Z
 	public fun getName ()Ljava/lang/String;
+	public final fun getPermissionDeclarations ()Z
 	public final fun getPermissions ()Z
 	public final fun getProviders ()Z
 	public final fun getReceivers ()Z
+	public final fun getSdk ()Z
 	public final fun getServices ()Z
+	public final fun getStartup ()Z
 	public final fun getTree ()Z
 	public final fun setActivities (Z)V
+	public final fun setActivityAliases (Z)V
 	public final fun setAllowedFilter (Lkotlin/jvm/functions/Function1;)V
 	public final fun setBaselineMap (Lkotlin/jvm/functions/Function1;)V
 	public final fun setFeatures (Z)V
+	public final fun setIntentFilters (Z)V
+	public final fun setPermissionDeclarations (Z)V
 	public final fun setPermissions (Z)V
 	public final fun setProviders (Z)V
 	public final fun setReceivers (Z)V
+	public final fun setSdk (Z)V
 	public final fun setServices (Z)V
+	public final fun setStartup (Z)V
 	public final fun setTree (Z)V
 }
 

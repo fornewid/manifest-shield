@@ -4,10 +4,10 @@ A Gradle plugin that guards against unintentional `AndroidManifest.xml` changes.
 
 ## Features
 
-- Detects changes in **permissions**, **activities**, **services**, **receivers**, **providers**, and **uses-feature** declarations
-- Generates per-category baseline files for easy review
+- Detects changes in permissions, features, components, and more from the merged manifest
+- Generates a single baseline file per variant for easy review
 - Supports **tree format** with library attribution via AGP's manifest merge blame log
-- Annotations: `(exported)` for components, `(required)` / `(not-required)` for features
+- Configurable per-category tracking with boolean flags
 
 ## Setup
 
@@ -19,13 +19,19 @@ plugins {
 }
 
 manifestGuard {
+    baselineDir = "manifest" // default
     configuration("release") {
+        sdk = true
         permissions = true
+        permissionDeclarations = true
+        features = true
         activities = true
+        activityAliases = true
         services = true
         receivers = true
         providers = true
-        features = true
+        intentFilters = true
+        startup = true
         tree = true
     }
 }
@@ -35,64 +41,138 @@ manifestGuard {
 
 ```bash
 # Save current manifest as baseline
-./gradlew :app:manifestGuardBaselineRelease
+./gradlew manifestGuardBaseline
 
 # Check for manifest changes
-./gradlew :app:manifestGuardRelease
+./gradlew manifestGuard
 ```
 
 ## Baseline Files
 
-Baseline files are stored in `manifest-guard/<variant>/` directory:
+Baseline files are stored in the `manifest/` directory (configurable via `baselineDir`):
 
 ```
-manifest-guard/release/
-├── permissions.txt
-├── activities.txt
-├── services.txt
-├── receivers.txt
-├── providers.txt
-├── features.txt
-├── permissions.tree.txt   # when tree=true
-├── activities.tree.txt
-└── ...
+manifest/
+├── releaseAndroidManifest.txt
+└── releaseAndroidManifest.tree.txt   # when tree=true
 ```
 
 ### Example Output
 
-**permissions.txt**
+**releaseAndroidManifest.txt**
 ```
-android.permission.ACCESS_NETWORK_STATE
-android.permission.INTERNET
-android.permission.WAKE_LOCK
-```
+<manifest>
+uses-sdk:
+  minSdkVersion=23
+  targetSdkVersion=35
 
-**activities.txt**
-```
-com.example.app.DetailActivity
-com.example.app.MainActivity (exported)
-com.google.firebase.FirebaseActivity
-```
+uses-feature:
+  android.hardware.camera (required)
 
-**activities.tree.txt**
-```
-app:
-  com.example.app.DetailActivity
+uses-permission:
+  android.permission.CAMERA
+  android.permission.INTERNET
+  android.permission.WRITE_EXTERNAL_STORAGE (maxSdkVersion=29)
+
+permission:
+  com.example.app.CUSTOM_PERMISSION (protectionLevel=signature)
+
+<application>
+activity:
   com.example.app.MainActivity (exported)
-com.google.firebase:firebase-core:21.0.0:
+    intent-filter:
+      action: android.intent.action.MAIN
+      category: android.intent.category.LAUNCHER
+    intent-filter:
+      action: android.intent.action.VIEW
+      category: android.intent.category.DEFAULT
+      category: android.intent.category.BROWSABLE
+      data: https://example.com/content/*
+
+activity-alias:
+  com.example.app.ShortcutAlias (exported) -> com.example.app.MainActivity
+
+service:
+  com.example.app.MyService
+
+receiver:
+  com.example.app.BootReceiver (exported)
+    intent-filter:
+      action: android.intent.action.BOOT_COMPLETED
+
+provider:
+  com.example.app.MyContentProvider (exported, authorities=com.example.app.provider)
+
+androidx.startup:
+  com.example.app.MyInitializer
+```
+
+**releaseAndroidManifest.tree.txt**
+```
+[app]
+<manifest>
+uses-permission:
+  android.permission.INTERNET
+
+<application>
+activity:
+  com.example.app.MainActivity (exported)
+
+[com.google.firebase:firebase-core:21.0.0]
+<manifest>
+uses-permission:
+  android.permission.CAMERA
+
+<application>
+activity:
   com.google.firebase.FirebaseActivity
 ```
+
+Empty categories are omitted from the output.
+
+## Supported Manifest Elements
+
+| Level | Element | Tracked Attributes |
+|---|---|---|
+| `<manifest>` | `uses-sdk` | `minSdkVersion`, `targetSdkVersion` |
+| | `uses-feature` | `name`, `glEsVersion`, `required` |
+| | `uses-permission` | `name`, `maxSdkVersion` |
+| | `permission` | `name`, `protectionLevel` |
+| `<application>` | `activity` | `name`, `exported`, `intent-filter` |
+| | `activity-alias` | `name`, `exported`, `targetActivity` |
+| | `service` | `name`, `exported`, `intent-filter` |
+| | `receiver` | `name`, `exported`, `intent-filter` |
+| | `provider` | `name`, `exported`, `authorities` |
+| | `androidx.startup` | Initializer class names |
+
+### Not Supported
+
+| Element | Reason |
+|---|---|
+| `<meta-data>` | May contain sensitive values (API keys). Visible in `.tree.txt` via full manifest. |
+| `<supports-screens>` | Low usage frequency |
+| `<compatible-screens>` | Low usage frequency |
+| `<uses-configuration>` | Low usage frequency |
+| `<supports-gl-texture>` | Low usage frequency |
+| `<uses-library>` | Under consideration |
+| `<queries>` | Under consideration |
 
 ## Configuration
 
 | Option | Default | Description |
 |--------|---------|-------------|
+| `baselineDir` | `"manifest"` | Directory name for baseline files |
+| `sdk` | `true` | Guard `<uses-sdk>` declarations |
 | `permissions` | `true` | Guard `<uses-permission>` declarations |
+| `permissionDeclarations` | `true` | Guard `<permission>` declarations |
+| `features` | `true` | Guard `<uses-feature>` declarations |
 | `activities` | `true` | Guard `<activity>` declarations |
+| `activityAliases` | `true` | Guard `<activity-alias>` declarations |
 | `services` | `true` | Guard `<service>` declarations |
 | `receivers` | `true` | Guard `<receiver>` declarations |
 | `providers` | `true` | Guard `<provider>` declarations |
-| `features` | `true` | Guard `<uses-feature>` declarations |
+| `intentFilters` | `true` | Guard `<intent-filter>` on exported components |
+| `startup` | `true` | Guard `androidx.startup` initializers |
 | `tree` | `false` | Enable tree format with library attribution |
 | `allowedFilter` | `{ true }` | Filter to allow/disallow entries |
 | `baselineMap` | `{ it }` | Transform entries in baseline |

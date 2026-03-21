@@ -1,7 +1,14 @@
 <manifest>
+uses-sdk:
+  minSdkVersion=23
+  targetSdkVersion=35
+
 uses-permission:
   android.permission.INTERNET
 
 <application>
 activity:
   io.github.fornewid.manifest.guard.sample.app.MainActivity (exported)
+    intent-filter:
+      action: android.intent.action.MAIN
+      category: android.intent.category.LAUNCHER

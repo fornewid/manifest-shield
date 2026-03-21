@@ -18,13 +18,25 @@ public open class ManifestGuardConfiguration @Inject constructor(
     @Input
     public override fun getName(): String = configurationName
 
+    /** Guard uses-sdk declarations (minSdkVersion, targetSdkVersion) */
+    @get:Input
+    public var sdk: Boolean = true
+
     /** Guard uses-permission declarations */
     @get:Input
     public var permissions: Boolean = true
 
+    /** Guard permission declarations */
+    @get:Input
+    public var permissionDeclarations: Boolean = true
+
     /** Guard activity declarations */
     @get:Input
     public var activities: Boolean = true
+
+    /** Guard activity-alias declarations */
+    @get:Input
+    public var activityAliases: Boolean = true
 
     /** Guard service declarations */
     @get:Input
@@ -41,6 +53,14 @@ public open class ManifestGuardConfiguration @Inject constructor(
     /** Guard uses-feature declarations */
     @get:Input
     public var features: Boolean = true
+
+    /** Guard intent-filter declarations on exported components */
+    @get:Input
+    public var intentFilters: Boolean = true
+
+    /** Guard androidx.startup initializer declarations */
+    @get:Input
+    public var startup: Boolean = true
 
     /** Enable tree format with library attribution from blame log */
     @get:Input
