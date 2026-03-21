@@ -19,19 +19,21 @@ plugins {
 }
 
 manifestGuard {
-    baselineDir = "manifest" // default
     configuration("release") {
+        // These are enabled by default
         sdk = true
         permissions = true
-        permissionDeclarations = true
         features = true
         activities = true
-        activityAliases = true
         services = true
-        receivers = true
-        providers = true
-        intentFilters = true
-        startup = true
+        // ...
+
+        // These are disabled by default (opt-in)
+        metaData = true
+        usesLibrary = true
+        queries = true
+        // ...
+
         tree = true
     }
 }
@@ -49,10 +51,10 @@ manifestGuard {
 
 ## Baseline Files
 
-Baseline files are stored in the `manifest/` directory (configurable via `baselineDir`):
+Baseline files are stored in the `manifestGuard/` directory (configurable via `baselineDir`):
 
 ```
-manifest/
+manifestGuard/
 ├── releaseAndroidManifest.txt
 └── releaseAndroidManifest.tree.txt   # when tree=true
 ```
@@ -92,6 +94,10 @@ activity:
 activity-alias:
   com.example.app.ShortcutAlias (exported) -> com.example.app.MainActivity
 
+meta-data:
+  com.google.android.geo.API_KEY (REDACTED)
+  com.example.app.FEATURE_ENABLED (true)
+
 service:
   com.example.app.MyService
 
@@ -103,20 +109,30 @@ receiver:
 provider:
   com.example.app.MyContentProvider (exported, authorities=com.example.app.provider)
 
+uses-library:
+  org.apache.http.legacy (required)
+
 androidx.startup:
   com.example.app.MyInitializer
 ```
 
 **releaseAndroidManifest.tree.txt**
 ```
-[app]
+[:app]
 <manifest>
+uses-sdk:
+  minSdkVersion=23
+  targetSdkVersion=35
+
 uses-permission:
   android.permission.INTERNET
 
 <application>
 activity:
   com.example.app.MainActivity (exported)
+    intent-filter:
+      action: android.intent.action.MAIN
+      category: android.intent.category.LAUNCHER
 
 [com.google.firebase:firebase-core:21.0.0]
 <manifest>
@@ -137,42 +153,50 @@ Empty categories are omitted from the output.
 | `<manifest>` | `uses-sdk` | `minSdkVersion`, `targetSdkVersion` |
 | | `uses-feature` | `name`, `glEsVersion`, `required` |
 | | `uses-permission` | `name`, `maxSdkVersion` |
+| | `uses-permission-sdk-23` | `name`, `maxSdkVersion` |
 | | `permission` | `name`, `protectionLevel` |
+| | `supports-screens` | screen size booleans, width thresholds |
+| | `compatible-screens` | screenSize + screenDensity pairs |
+| | `uses-configuration` | input hardware requirements |
+| | `supports-gl-texture` | `name` |
+| | `queries` | package, intent, provider children |
 | `<application>` | `activity` | `name`, `exported`, `intent-filter` |
 | | `activity-alias` | `name`, `exported`, `targetActivity` |
+| | `meta-data` | `name`, `value` (REDACTED for non-primitive) |
 | | `service` | `name`, `exported`, `intent-filter` |
 | | `receiver` | `name`, `exported`, `intent-filter` |
 | | `provider` | `name`, `exported`, `authorities` |
+| | `uses-library` | `name`, `required` |
+| | `uses-native-library` | `name`, `required` |
+| | `profileable` | `shell`, `enabled` |
 | | `androidx.startup` | Initializer class names |
-
-### Not Supported
-
-| Element | Reason |
-|---|---|
-| `<meta-data>` | May contain sensitive values (API keys). Visible in `.tree.txt` via full manifest. |
-| `<supports-screens>` | Low usage frequency |
-| `<compatible-screens>` | Low usage frequency |
-| `<uses-configuration>` | Low usage frequency |
-| `<supports-gl-texture>` | Low usage frequency |
-| `<uses-library>` | Under consideration |
-| `<queries>` | Under consideration |
 
 ## Configuration
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `baselineDir` | `"manifest"` | Directory name for baseline files |
-| `sdk` | `true` | Guard `<uses-sdk>` declarations |
-| `permissions` | `true` | Guard `<uses-permission>` declarations |
-| `permissionDeclarations` | `true` | Guard `<permission>` declarations |
-| `features` | `true` | Guard `<uses-feature>` declarations |
-| `activities` | `true` | Guard `<activity>` declarations |
-| `activityAliases` | `true` | Guard `<activity-alias>` declarations |
-| `services` | `true` | Guard `<service>` declarations |
-| `receivers` | `true` | Guard `<receiver>` declarations |
-| `providers` | `true` | Guard `<provider>` declarations |
-| `intentFilters` | `true` | Guard `<intent-filter>` on exported components |
-| `startup` | `true` | Guard `androidx.startup` initializers |
+| `baselineDir` | `"manifestGuard"` | Directory name for baseline files |
+| `sdk` | **`true`** | Guard `<uses-sdk>` |
+| `permissions` | **`true`** | Guard `<uses-permission>` |
+| `permissionDeclarations` | **`true`** | Guard `<permission>` |
+| `features` | **`true`** | Guard `<uses-feature>` |
+| `activities` | **`true`** | Guard `<activity>` |
+| `activityAliases` | **`true`** | Guard `<activity-alias>` |
+| `services` | **`true`** | Guard `<service>` |
+| `receivers` | **`true`** | Guard `<receiver>` |
+| `providers` | **`true`** | Guard `<provider>` |
+| `intentFilters` | **`true`** | Guard `<intent-filter>` on components |
+| `startup` | **`true`** | Guard `androidx.startup` initializers |
+| `permissionsSdk23` | `false` | Guard `<uses-permission-sdk-23>` |
+| `supportsScreens` | `false` | Guard `<supports-screens>` |
+| `compatibleScreens` | `false` | Guard `<compatible-screens>` |
+| `usesConfiguration` | `false` | Guard `<uses-configuration>` |
+| `supportsGlTexture` | `false` | Guard `<supports-gl-texture>` |
+| `queries` | `false` | Guard `<queries>` |
+| `metaData` | `false` | Guard `<meta-data>` (non-primitive values shown as `(REDACTED)`) |
+| `usesLibrary` | `false` | Guard `<uses-library>` |
+| `usesNativeLibrary` | `false` | Guard `<uses-native-library>` |
+| `profileable` | `false` | Guard `<profileable>` |
 | `tree` | `false` | Enable tree format with library attribution |
 | `allowedFilter` | `{ true }` | Filter to allow/disallow entries |
 | `baselineMap` | `{ it }` | Transform entries in baseline |
