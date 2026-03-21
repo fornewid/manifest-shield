@@ -1,4 +1,4 @@
-[app]
+[:sample:app]
 <manifest>
 uses-sdk:
   minSdkVersion=23

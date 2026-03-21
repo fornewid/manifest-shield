@@ -48,6 +48,9 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
     abstract val projectPath: Property<String>
 
     @get:Input
+    abstract val rootProjectDir: Property<String>
+
+    @get:Input
     abstract val shouldBaseline: Property<Boolean>
 
     @get:Input
@@ -106,7 +109,8 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         val sourceMap = if (blameLogFile.isPresent) {
             val blameFile = blameLogFile.get().asFile
             if (blameFile.exists()) {
-                BlameLogParser.buildSourceMap(BlameLogParser.parse(blameFile))
+                val rootDir = rootProjectDir.orNull?.let { File(it) }
+                BlameLogParser.buildSourceMap(BlameLogParser.parse(blameFile, rootDir))
             } else {
                 logger.warn("Manifest merger blame log not found. Attribution will be unavailable.")
                 emptyMap()
@@ -119,6 +123,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
             manifest = manifest,
             sourceMap = sourceMap,
             baselineMap = mapper,
+            projectPath = path,
             guardSdk = guardSdk.get(),
             guardFeatures = guardFeatures.get(),
             guardPermissions = guardPermissions.get(),
@@ -163,6 +168,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         mergedManifest: org.gradle.api.provider.Provider<org.gradle.api.file.RegularFile>,
         blameLog: File?,
         projectPath: String,
+        rootProjectDir: File,
         baselineDirectory: org.gradle.api.file.Directory,
         filePrefix: String,
         shouldBaseline: Boolean,
@@ -173,6 +179,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         }
         this.configurationName.set(config.configurationName)
         this.projectPath.set(projectPath)
+        this.rootProjectDir.set(rootProjectDir.absolutePath)
         this.shouldBaseline.set(shouldBaseline)
         this.guardSdk.set(config.sdk)
         this.guardPermissions.set(config.permissions)

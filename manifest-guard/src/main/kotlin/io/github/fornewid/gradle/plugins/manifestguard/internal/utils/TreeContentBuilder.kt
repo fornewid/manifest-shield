@@ -68,9 +68,9 @@ internal object TreeContentBuilder {
         }
 
         val sortedSources = sourceTagEntries.keys.sorted().let { sources ->
-            val app = sources.filter { it == "app" }
-            val rest = sources.filter { it != "app" }
-            app + rest
+            val local = sources.filter { it.startsWith(":") }.sorted()
+            val external = sources.filter { !it.startsWith(":") }.sorted()
+            local + external
         }
 
         return buildString {
@@ -118,6 +118,7 @@ internal object TreeContentBuilder {
         manifest: ManifestExtraction,
         sourceMap: Map<String, String>,
         baselineMap: (String) -> String?,
+        projectPath: String,
         guardSdk: Boolean,
         guardFeatures: Boolean,
         guardPermissions: Boolean,
@@ -164,24 +165,24 @@ internal object TreeContentBuilder {
         if (guardReceivers && manifest.receivers.isNotEmpty()) addEntries("receiver", "receiver", manifest.receivers, isComponent = true)
         if (guardProviders && manifest.providers.isNotEmpty()) addEntries("provider", "provider", manifest.providers, isComponent = true)
 
-        // Startup initializers (always attributed to "app")
+        // Startup initializers (attributed to the current project module)
         if (guardStartup && manifest.startupInitializers.isNotEmpty()) {
             sourceTagEntries
-                .getOrPut("app") { mutableMapOf() }
+                .getOrPut(projectPath) { mutableMapOf() }
                 .getOrPut("androidx.startup") { mutableListOf() }
                 .addAll(manifest.startupInitializers)
         }
 
-        // uses-sdk is always from "app" - ensure "app" source exists if sdk is present
+        // uses-sdk is always from the current project module
         val sdk = manifest.sdk
         if (guardSdk && sdk != null) {
-            sourceTagEntries.getOrPut("app") { mutableMapOf() }
+            sourceTagEntries.getOrPut(projectPath) { mutableMapOf() }
         }
 
         val sortedSources = sourceTagEntries.keys.sorted().let { sources ->
-            val app = sources.filter { it == "app" }
-            val rest = sources.filter { it != "app" }
-            app + rest
+            val local = sources.filter { it.startsWith(":") }.sorted()
+            val external = sources.filter { !it.startsWith(":") }.sorted()
+            local + external
         }
 
         return buildString {
@@ -190,7 +191,7 @@ internal object TreeContentBuilder {
                 val tagMap = sourceTagEntries[source] ?: continue
 
                 // uses-sdk is per-source "app" only (it comes from the build config)
-                val hasSdk = guardSdk && source == "app" && manifest.sdk != null
+                val hasSdk = guardSdk && source == projectPath && manifest.sdk != null
 
                 val manifestTags = mutableListOf<String>()
                 if (hasSdk) manifestTags.add("uses-sdk")

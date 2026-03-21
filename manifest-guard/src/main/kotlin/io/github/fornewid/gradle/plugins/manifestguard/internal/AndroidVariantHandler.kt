@@ -77,7 +77,7 @@ internal object AndroidVariantHandler {
                 "manifestGuardTree$capitalizedName",
                 ManifestTreeDiffTask::class.java
             ) {
-                setParams(config, mergedManifest, blameLogFile, project.path, baselineDirectory, filePrefix, false)
+                setParams(config, mergedManifest, blameLogFile, project.path, project.rootDir, baselineDirectory, filePrefix, false)
             }
             perConfigGuardTask.configure { dependsOn(treeGuardTask) }
 
@@ -85,7 +85,7 @@ internal object AndroidVariantHandler {
                 "manifestGuardTreeBaseline$capitalizedName",
                 ManifestTreeDiffTask::class.java
             ) {
-                setParams(config, mergedManifest, blameLogFile, project.path, baselineDirectory, filePrefix, true)
+                setParams(config, mergedManifest, blameLogFile, project.path, project.rootDir, baselineDirectory, filePrefix, true)
             }
             perConfigBaselineTask.configure { dependsOn(treeBaselineTask) }
         }
