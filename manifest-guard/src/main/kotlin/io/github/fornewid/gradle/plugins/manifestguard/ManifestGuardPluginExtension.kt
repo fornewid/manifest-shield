@@ -11,7 +11,7 @@ public open class ManifestGuardPluginExtension @Inject constructor(
     private val objects: ObjectFactory
 ) {
     /** Name of the directory to store baseline files (default: "manifest") */
-    public var baselineDir: String = "manifest"
+    public var baselineDir: String = "manifestGuard"
 
     internal val configurations = objects.domainObjectContainer(ManifestGuardConfiguration::class.java)
 

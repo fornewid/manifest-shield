@@ -15,7 +15,7 @@ internal class ManifestGuardPluginTest {
 
             assertThat(result.output).contains("Manifest Guard baseline created")
 
-            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            val baseline = project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
             assertThat(baseline).contains("uses-permission:")
             assertThat(baseline).contains("android.permission.INTERNET")
@@ -119,7 +119,7 @@ internal class ManifestGuardPluginTest {
         AndroidProject(pluginConfig = pluginConfig).use { project ->
             build(project, ":app:manifestGuardBaselineRelease")
 
-            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            val baseline = project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
             assertThat(baseline).contains("uses-permission:")
             assertThat(baseline).doesNotContain("activity:")
@@ -130,7 +130,7 @@ internal class ManifestGuardPluginTest {
     fun `re-baseline updates baseline files`() {
         AndroidProject().use { project ->
             build(project, ":app:manifestGuardBaselineRelease")
-            val initial = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            val initial = project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")
 
             project.updateManifest(
                 """
@@ -152,7 +152,7 @@ internal class ManifestGuardPluginTest {
                 """.trimIndent()
             )
             build(project, ":app:manifestGuardBaselineRelease")
-            val updated = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            val updated = project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")
 
             assertThat(updated).isNotEqualTo(initial)
             assertThat(updated).contains("android.permission.CAMERA")
@@ -177,7 +177,7 @@ internal class ManifestGuardPluginTest {
             build(project, ":app:manifestGuardBaselineRelease")
 
             assertThat(project.readBaselineFile("custom-baselines/releaseAndroidManifest.txt")).isNotNull()
-            assertThat(project.readBaselineFile("manifest/releaseAndroidManifest.txt")).isNull()
+            assertThat(project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")).isNull()
         }
     }
 
@@ -194,7 +194,7 @@ internal class ManifestGuardPluginTest {
         AndroidProject(pluginConfig = pluginConfig).use { project ->
             build(project, ":app:manifestGuardBaselineRelease")
 
-            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            val baseline = project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
             assertThat(baseline).doesNotContain("uses-sdk:")
             assertThat(baseline).contains("uses-permission:")
@@ -214,7 +214,7 @@ internal class ManifestGuardPluginTest {
         AndroidProject(pluginConfig = pluginConfig).use { project ->
             build(project, ":app:manifestGuardBaselineRelease")
 
-            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            val baseline = project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
             assertThat(baseline).contains("activity:")
             assertThat(baseline).doesNotContain("intent-filter:")
@@ -226,7 +226,7 @@ internal class ManifestGuardPluginTest {
         AndroidProject().use { project ->
             build(project, ":app:manifestGuardBaselineRelease")
 
-            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            val baseline = project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
             assertThat(baseline).contains("intent-filter:")
             assertThat(baseline).contains("action: android.intent.action.MAIN")
@@ -249,8 +249,8 @@ internal class ManifestGuardPluginTest {
         AndroidProject(pluginConfig = pluginConfig).use { project ->
             build(project, ":app:manifestGuardBaselineRelease")
 
-            val txt = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
-            val tree = project.readBaselineFile("manifest/releaseAndroidManifest.tree.txt")
+            val txt = project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")
+            val tree = project.readBaselineFile("manifestGuard/releaseAndroidManifest.tree.txt")
             assertThat(txt).isNotNull()
             assertThat(tree).isNotNull()
 
