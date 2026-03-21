@@ -182,6 +182,91 @@ internal class ManifestGuardPluginTest {
     }
 
     @Test
+    fun `baseline excludes sdk when sdk is disabled`() {
+        val pluginConfig = """
+            manifestGuard {
+                configuration("release") {
+                    sdk = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            build(project, ":app:manifestGuardBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("uses-sdk:")
+            assertThat(baseline).contains("uses-permission:")
+        }
+    }
+
+    @Test
+    fun `baseline excludes intent-filters when intentFilters is disabled`() {
+        val pluginConfig = """
+            manifestGuard {
+                configuration("release") {
+                    intentFilters = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            build(project, ":app:manifestGuardBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("activity:")
+            assertThat(baseline).doesNotContain("intent-filter:")
+        }
+    }
+
+    @Test
+    fun `baseline includes intent-filters by default`() {
+        AndroidProject().use { project ->
+            build(project, ":app:manifestGuardBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("intent-filter:")
+            assertThat(baseline).contains("action: android.intent.action.MAIN")
+            assertThat(baseline).contains("category: android.intent.category.LAUNCHER")
+        }
+    }
+
+    @Test
+    fun `tree baseline matches txt baseline content`() {
+        val pluginConfig = """
+            manifestGuard {
+                configuration("release") {
+                    permissions = true
+                    activities = true
+                    tree = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            build(project, ":app:manifestGuardBaselineRelease")
+
+            val txt = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            val tree = project.readBaselineFile("manifest/releaseAndroidManifest.tree.txt")
+            assertThat(txt).isNotNull()
+            assertThat(tree).isNotNull()
+
+            // Both should contain the same categories
+            assertThat(txt).contains("uses-sdk:")
+            assertThat(tree).contains("uses-sdk:")
+            assertThat(txt).contains("uses-permission:")
+            assertThat(tree).contains("uses-permission:")
+            assertThat(txt).contains("activity:")
+            assertThat(tree).contains("activity:")
+            assertThat(txt).contains("intent-filter:")
+            assertThat(tree).contains("intent-filter:")
+        }
+    }
+
+    @Test
     fun `tasks report configuration cache incompatibility gracefully`() {
         AndroidProject().use { project ->
             val result = build(

@@ -3,6 +3,7 @@ package io.github.fornewid.gradle.plugins.manifestguard.internal.tree
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardConfiguration
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardPlugin
 import io.github.fornewid.gradle.plugins.manifestguard.internal.BlameLogParser
+import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestExtraction
 import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestVisitor
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestListDiff
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestListDiffResult
@@ -13,6 +14,7 @@ import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Messaging
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.OutputFileUtils
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Tasks.declareCompatibilities
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.TreeContentBuilder
+import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestEntry
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -49,6 +51,9 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
     abstract val shouldBaseline: Property<Boolean>
 
     @get:Input
+    abstract val guardSdk: Property<Boolean>
+
+    @get:Input
     abstract val guardPermissions: Property<Boolean>
 
     @get:Input
@@ -72,6 +77,12 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
     @get:Input
     abstract val guardFeatures: Property<Boolean>
 
+    @get:Input
+    abstract val guardIntentFilters: Property<Boolean>
+
+    @get:Input
+    abstract val guardStartup: Property<Boolean>
+
     @get:OutputDirectory
     abstract val baselineDir: DirectoryProperty
 
@@ -90,6 +101,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         val baseline = shouldBaseline.get()
         val dir = baselineDir.get()
         val prefix = filePrefix.get()
+        val showIntentFilters = guardIntentFilters.get()
 
         val sourceMap = if (blameLogFile.isPresent) {
             val blameFile = blameLogFile.get().asFile
@@ -103,19 +115,22 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
             emptyMap()
         }
 
-        // Collect categories in document order
-        // Triple: (tag, elementType for sourceMap lookup, entries)
-        val categories = mutableListOf<Triple<String, String, List<ManifestEntry>>>()
-        if (guardFeatures.get()) categories.add(Triple("uses-feature", "uses-feature", manifest.features))
-        if (guardPermissions.get()) categories.add(Triple("uses-permission", "uses-permission", manifest.permissions))
-        if (guardPermissionDeclarations.get()) categories.add(Triple("permission", "permission", manifest.permissionDeclarations))
-        if (guardActivities.get()) categories.add(Triple("activity", "activity", manifest.activities))
-        if (guardActivityAliases.get()) categories.add(Triple("activity-alias", "activity-alias", manifest.activityAliases))
-        if (guardServices.get()) categories.add(Triple("service", "service", manifest.services))
-        if (guardReceivers.get()) categories.add(Triple("receiver", "receiver", manifest.receivers))
-        if (guardProviders.get()) categories.add(Triple("provider", "provider", manifest.providers))
-
-        val treeContent = TreeContentBuilder.buildMerged(categories, sourceMap, mapper)
+        val treeContent = TreeContentBuilder.buildMergedWithSdk(
+            manifest = manifest,
+            sourceMap = sourceMap,
+            baselineMap = mapper,
+            guardSdk = guardSdk.get(),
+            guardFeatures = guardFeatures.get(),
+            guardPermissions = guardPermissions.get(),
+            guardPermissionDeclarations = guardPermissionDeclarations.get(),
+            guardActivities = guardActivities.get(),
+            guardActivityAliases = guardActivityAliases.get(),
+            guardServices = guardServices.get(),
+            guardReceivers = guardReceivers.get(),
+            guardProviders = guardProviders.get(),
+            guardIntentFilters = showIntentFilters,
+            guardStartup = guardStartup.get(),
+        )
         val baselineFile = OutputFileUtils.baselineFile(dir, "$prefix.tree")
         val category = "$prefix.tree"
 
@@ -159,6 +174,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         this.configurationName.set(config.configurationName)
         this.projectPath.set(projectPath)
         this.shouldBaseline.set(shouldBaseline)
+        this.guardSdk.set(config.sdk)
         this.guardPermissions.set(config.permissions)
         this.guardPermissionDeclarations.set(config.permissionDeclarations)
         this.guardActivities.set(config.activities)
@@ -167,6 +183,8 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         this.guardReceivers.set(config.receivers)
         this.guardProviders.set(config.providers)
         this.guardFeatures.set(config.features)
+        this.guardIntentFilters.set(config.intentFilters)
+        this.guardStartup.set(config.startup)
         this.baselineDir.set(baselineDirectory)
         this.filePrefix.set(filePrefix)
         this.baselineMap.set(config.baselineMap)
