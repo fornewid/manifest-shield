@@ -1,14 +1,15 @@
 plugins {
-    id("com.android.application")
+    alias(libs.plugins.android.application)
     id("io.github.fornewid.manifest-guard")
 }
 
 android {
-    compileSdk = 31
+    namespace = "io.github.fornewid.manifest.guard.sample.app"
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 23
-        targetSdk = 31
+        targetSdk = 35
     }
 }
 

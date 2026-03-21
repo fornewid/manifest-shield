@@ -1,0 +1,1 @@
+io.github.fornewid.manifest.guard.sample.app.MainActivity (exported)

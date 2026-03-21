@@ -1,20 +1,8 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-buildscript {
-    repositories {
-        mavenCentral()
-        google()
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10"
-        classpath("org.jlleitschuh.gradle:ktlint-gradle:10.2.1")
-        classpath("org.jacoco:org.jacoco.core:0.8.7")
-        classpath("com.android.tools.build:gradle:7.1.3")
-        classpath("io.github.fornewid.manifest-guard:manifest-guard")
-    }
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.ktlint)
 }
-
-apply plugin: "org.jlleitschuh.gradle.ktlint"
 
 allprojects {
     repositories {

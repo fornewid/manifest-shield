@@ -56,6 +56,7 @@ internal class AndroidProject(
         // local.properties
         val androidHome = System.getenv("ANDROID_HOME")
             ?: System.getenv("ANDROID_SDK_ROOT")
+            ?: findSdkDirFromLocalProperties()
             ?: error("ANDROID_HOME or ANDROID_SDK_ROOT must be set")
         dir.resolve("local.properties").writeText("sdk.dir=$androidHome")
 
@@ -97,6 +98,20 @@ internal class AndroidProject(
 
     override fun close() {
         dir.deleteRecursively()
+    }
+
+    private fun findSdkDirFromLocalProperties(): String? {
+        var current: File? = File("").absoluteFile
+        while (current != null) {
+            val localProps = current.resolve("local.properties")
+            if (localProps.exists()) {
+                val props = java.util.Properties().apply { localProps.reader().use { load(it) } }
+                val sdkDir = props.getProperty("sdk.dir")
+                if (sdkDir != null) return sdkDir
+            }
+            current = current.parentFile
+        }
+        return null
     }
 
     companion object {

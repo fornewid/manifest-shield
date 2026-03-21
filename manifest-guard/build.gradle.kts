@@ -5,8 +5,8 @@ plugins {
   `kotlin-dsl`
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.dokka)
-  alias(libs.plugins.mavenPublish)
-  alias(libs.plugins.binaryCompatibilityValidator)
+  alias(libs.plugins.maven.publish)
+  alias(libs.plugins.binary.compatibility.validator)
 }
 
 repositories {
@@ -23,12 +23,6 @@ tasks.withType<KotlinCompile>().configureEach {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
     apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_4)
     languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_4)
-  }
-}
-
-java {
-  toolchain {
-    languageVersion.set(JavaLanguageVersion.of(17))
   }
 }
 
