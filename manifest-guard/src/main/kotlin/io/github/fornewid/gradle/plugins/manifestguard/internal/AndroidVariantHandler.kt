@@ -29,7 +29,7 @@ internal object AndroidVariantHandler {
         androidComponents.onVariants { variant ->
             extension.configurations.configureEach {
                 if (configurationName == variant.name) {
-                    registerTasks(project, this, variant, guardTask, baselineTask)
+                    registerTasks(project, extension.baselineDir, this, variant, guardTask, baselineTask)
                 }
             }
         }
@@ -42,6 +42,7 @@ internal object AndroidVariantHandler {
 
     private fun registerTasks(
         project: Project,
+        baselineDir: String,
         config: ManifestGuardConfiguration,
         variant: Variant,
         guardTask: TaskProvider<*>,
@@ -49,7 +50,7 @@ internal object AndroidVariantHandler {
     ) {
         val mergedManifest = variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
         val capitalizedName = config.configurationName.capitalize()
-        val baselineDirectory = OutputFileUtils.manifestGuardDir(project, config.configurationName)
+        val baselineDirectory = OutputFileUtils.manifestGuardDir(project, baselineDir, config.configurationName)
         val blameLogFile = project.layout.buildDirectory
             .file("outputs/logs/manifest-merger-${config.configurationName}-report.txt")
             .get().asFile

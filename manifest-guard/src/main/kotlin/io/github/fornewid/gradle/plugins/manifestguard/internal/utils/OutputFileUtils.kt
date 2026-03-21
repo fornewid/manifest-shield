@@ -8,10 +8,11 @@ internal object OutputFileUtils {
 
     fun manifestGuardDir(
         project: Project,
+        baselineDir: String,
         configurationName: String,
     ): Directory {
         val dir = project.layout.projectDirectory
-            .dir("manifest-guard")
+            .dir(baselineDir)
             .dir(configurationName)
         dir.asFile.apply {
             if (!exists()) mkdirs()

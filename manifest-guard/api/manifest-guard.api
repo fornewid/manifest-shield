@@ -32,5 +32,7 @@ public class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuardPlugin
 	public fun <init> (Lorg/gradle/api/model/ObjectFactory;)V
 	public final fun configuration (Ljava/lang/String;)V
 	public final fun configuration (Ljava/lang/String;Lorg/gradle/api/Action;)V
+	public final fun getBaselineDir ()Ljava/lang/String;
+	public final fun setBaselineDir (Ljava/lang/String;)V
 }
 

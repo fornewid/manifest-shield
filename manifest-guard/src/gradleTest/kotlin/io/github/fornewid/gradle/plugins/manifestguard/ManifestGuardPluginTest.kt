@@ -15,11 +15,11 @@ internal class ManifestGuardPluginTest {
 
             assertThat(result.output).contains("Manifest Guard baseline created")
 
-            val permissions = project.readBaselineFile("manifest-guard/release/permissions.txt")
+            val permissions = project.readBaselineFile("manifest/release/permissions.txt")
             assertThat(permissions).isNotNull()
             assertThat(permissions).contains("android.permission.INTERNET")
 
-            val activities = project.readBaselineFile("manifest-guard/release/activities.txt")
+            val activities = project.readBaselineFile("manifest/release/activities.txt")
             assertThat(activities).isNotNull()
             assertThat(activities).contains("MainActivity")
             assertThat(activities).contains("(exported)")
@@ -123,9 +123,9 @@ internal class ManifestGuardPluginTest {
             build(project, ":app:manifestGuardBaselineRelease")
 
             // Verify only permissions.txt is created
-            assertThat(project.readBaselineFile("manifest-guard/release/permissions.txt")).isNotNull()
-            assertThat(project.readBaselineFile("manifest-guard/release/activities.txt")).isNull()
-            assertThat(project.readBaselineFile("manifest-guard/release/services.txt")).isNull()
+            assertThat(project.readBaselineFile("manifest/release/permissions.txt")).isNotNull()
+            assertThat(project.readBaselineFile("manifest/release/activities.txt")).isNull()
+            assertThat(project.readBaselineFile("manifest/release/services.txt")).isNull()
         }
     }
 
@@ -134,7 +134,7 @@ internal class ManifestGuardPluginTest {
         AndroidProject().use { project ->
             // Initial baseline
             build(project, ":app:manifestGuardBaselineRelease")
-            val initialPermissions = project.readBaselineFile("manifest-guard/release/permissions.txt")
+            val initialPermissions = project.readBaselineFile("manifest/release/permissions.txt")
 
             // Add a permission and re-baseline
             project.updateManifest(
@@ -157,13 +157,35 @@ internal class ManifestGuardPluginTest {
                 """.trimIndent()
             )
             build(project, ":app:manifestGuardBaselineRelease")
-            val updatedPermissions = project.readBaselineFile("manifest-guard/release/permissions.txt")
+            val updatedPermissions = project.readBaselineFile("manifest/release/permissions.txt")
 
             assertThat(updatedPermissions).isNotEqualTo(initialPermissions)
             assertThat(updatedPermissions).contains("android.permission.CAMERA")
 
             // Guard should now pass
             build(project, ":app:manifestGuardRelease")
+        }
+    }
+
+    @Test
+    fun `baseline uses custom directory when baselineDir is set`() {
+        val pluginConfig = """
+            manifestGuard {
+                baselineDir = "custom-baselines"
+                configuration("release") {
+                    permissions = true
+                    activities = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            build(project, ":app:manifestGuardBaselineRelease")
+
+            assertThat(project.readBaselineFile("custom-baselines/release/permissions.txt")).isNotNull()
+            assertThat(project.readBaselineFile("custom-baselines/release/activities.txt")).isNotNull()
+            // Default directory should not exist
+            assertThat(project.readBaselineFile("manifest/release/permissions.txt")).isNull()
         }
     }
 
