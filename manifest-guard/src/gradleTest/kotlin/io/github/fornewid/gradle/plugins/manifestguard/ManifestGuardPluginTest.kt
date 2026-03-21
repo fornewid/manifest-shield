@@ -9,30 +9,33 @@ import org.junit.jupiter.api.Test
 internal class ManifestGuardPluginTest {
 
     @Test
-    fun `baseline task creates permission and activity files`() {
+    fun `baseline task creates merged baseline file`() {
         AndroidProject().use { project ->
             val result = build(project, ":app:manifestGuardBaselineRelease")
 
             assertThat(result.output).contains("Manifest Guard baseline created")
 
-            val permissions = project.readBaselineFile("manifest/release/permissions.txt")
-            assertThat(permissions).isNotNull()
-            assertThat(permissions).contains("android.permission.INTERNET")
+            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("uses-permission:")
+            assertThat(baseline).contains("android.permission.INTERNET")
+            assertThat(baseline).contains("activity:")
+            assertThat(baseline).contains("MainActivity")
+            assertThat(baseline).contains("(exported)")
 
-            val activities = project.readBaselineFile("manifest/release/activities.txt")
-            assertThat(activities).isNotNull()
-            assertThat(activities).contains("MainActivity")
-            assertThat(activities).contains("(exported)")
+            // Empty categories should not appear
+            assertThat(baseline).doesNotContain("uses-feature:")
+            assertThat(baseline).doesNotContain("service:")
+            assertThat(baseline).doesNotContain("receiver:")
+            assertThat(baseline).doesNotContain("provider:")
         }
     }
 
     @Test
     fun `guard task passes when manifest has not changed`() {
         AndroidProject().use { project ->
-            // Create baseline
             build(project, ":app:manifestGuardBaselineRelease")
 
-            // Run guard - should pass
             val result = build(project, ":app:manifestGuardRelease")
             assertThat(result.output).doesNotContain("Manifest Changed")
         }
@@ -41,10 +44,8 @@ internal class ManifestGuardPluginTest {
     @Test
     fun `guard task fails when permission is added`() {
         AndroidProject().use { project ->
-            // Create baseline
             build(project, ":app:manifestGuardBaselineRelease")
 
-            // Add a new permission
             project.updateManifest(
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -65,7 +66,6 @@ internal class ManifestGuardPluginTest {
                 """.trimIndent()
             )
 
-            // Run guard - should fail
             val result = buildAndFail(project, ":app:manifestGuardRelease")
             assertThat(result.output).contains("android.permission.CAMERA")
         }
@@ -74,10 +74,8 @@ internal class ManifestGuardPluginTest {
     @Test
     fun `guard task fails when activity is added`() {
         AndroidProject().use { project ->
-            // Create baseline
             build(project, ":app:manifestGuardBaselineRelease")
 
-            // Add a new activity
             project.updateManifest(
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -119,24 +117,21 @@ internal class ManifestGuardPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            // Create baseline
             build(project, ":app:manifestGuardBaselineRelease")
 
-            // Verify only permissions.txt is created
-            assertThat(project.readBaselineFile("manifest/release/permissions.txt")).isNotNull()
-            assertThat(project.readBaselineFile("manifest/release/activities.txt")).isNull()
-            assertThat(project.readBaselineFile("manifest/release/services.txt")).isNull()
+            val baseline = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("uses-permission:")
+            assertThat(baseline).doesNotContain("activity:")
         }
     }
 
     @Test
     fun `re-baseline updates baseline files`() {
         AndroidProject().use { project ->
-            // Initial baseline
             build(project, ":app:manifestGuardBaselineRelease")
-            val initialPermissions = project.readBaselineFile("manifest/release/permissions.txt")
+            val initial = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
 
-            // Add a permission and re-baseline
             project.updateManifest(
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -157,12 +152,11 @@ internal class ManifestGuardPluginTest {
                 """.trimIndent()
             )
             build(project, ":app:manifestGuardBaselineRelease")
-            val updatedPermissions = project.readBaselineFile("manifest/release/permissions.txt")
+            val updated = project.readBaselineFile("manifest/releaseAndroidManifest.txt")
 
-            assertThat(updatedPermissions).isNotEqualTo(initialPermissions)
-            assertThat(updatedPermissions).contains("android.permission.CAMERA")
+            assertThat(updated).isNotEqualTo(initial)
+            assertThat(updated).contains("android.permission.CAMERA")
 
-            // Guard should now pass
             build(project, ":app:manifestGuardRelease")
         }
     }
@@ -182,19 +176,14 @@ internal class ManifestGuardPluginTest {
         AndroidProject(pluginConfig = pluginConfig).use { project ->
             build(project, ":app:manifestGuardBaselineRelease")
 
-            assertThat(project.readBaselineFile("custom-baselines/release/permissions.txt")).isNotNull()
-            assertThat(project.readBaselineFile("custom-baselines/release/activities.txt")).isNotNull()
-            // Default directory should not exist
-            assertThat(project.readBaselineFile("manifest/release/permissions.txt")).isNull()
+            assertThat(project.readBaselineFile("custom-baselines/releaseAndroidManifest.txt")).isNotNull()
+            assertThat(project.readBaselineFile("manifest/releaseAndroidManifest.txt")).isNull()
         }
     }
 
     @Test
     fun `tasks report configuration cache incompatibility gracefully`() {
         AndroidProject().use { project ->
-            // With --configuration-cache, the build should still succeed
-            // because tasks declare notCompatibleWithConfigurationCache.
-            // Gradle will skip caching but not fail.
             val result = build(
                 project,
                 ":app:manifestGuardBaselineRelease",

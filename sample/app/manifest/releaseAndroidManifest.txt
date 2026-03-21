@@ -1,0 +1,7 @@
+<manifest>
+uses-permission:
+  android.permission.INTERNET
+
+<application>
+activity:
+  io.github.fornewid.manifest.guard.sample.app.MainActivity (exported)

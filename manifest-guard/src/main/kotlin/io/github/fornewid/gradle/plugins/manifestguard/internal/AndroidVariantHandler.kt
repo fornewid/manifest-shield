@@ -50,7 +50,8 @@ internal object AndroidVariantHandler {
     ) {
         val mergedManifest = variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
         val capitalizedName = config.configurationName.capitalize()
-        val baselineDirectory = OutputFileUtils.manifestGuardDir(project, baselineDir, config.configurationName)
+        val baselineDirectory = OutputFileUtils.manifestGuardDir(project, baselineDir)
+        val filePrefix = "${config.configurationName}AndroidManifest"
         val blameLogFile = project.layout.buildDirectory
             .file("outputs/logs/manifest-merger-${config.configurationName}-report.txt")
             .get().asFile
@@ -59,7 +60,7 @@ internal object AndroidVariantHandler {
             "manifestGuard$capitalizedName",
             ManifestGuardListTask::class.java
         ) {
-            setParams(config, mergedManifest, project.path, baselineDirectory, false)
+            setParams(config, mergedManifest, project.path, baselineDirectory, filePrefix, false)
         }
         guardTask.configure { dependsOn(perConfigGuardTask) }
 
@@ -67,7 +68,7 @@ internal object AndroidVariantHandler {
             "manifestGuardBaseline$capitalizedName",
             ManifestGuardListTask::class.java
         ) {
-            setParams(config, mergedManifest, project.path, baselineDirectory, true)
+            setParams(config, mergedManifest, project.path, baselineDirectory, filePrefix, true)
         }
         baselineTask.configure { dependsOn(perConfigBaselineTask) }
 
@@ -76,7 +77,7 @@ internal object AndroidVariantHandler {
                 "manifestGuardTree$capitalizedName",
                 ManifestTreeDiffTask::class.java
             ) {
-                setParams(config, mergedManifest, blameLogFile, project.path, baselineDirectory, false)
+                setParams(config, mergedManifest, blameLogFile, project.path, baselineDirectory, filePrefix, false)
             }
             perConfigGuardTask.configure { dependsOn(treeGuardTask) }
 
@@ -84,7 +85,7 @@ internal object AndroidVariantHandler {
                 "manifestGuardTreeBaseline$capitalizedName",
                 ManifestTreeDiffTask::class.java
             ) {
-                setParams(config, mergedManifest, blameLogFile, project.path, baselineDirectory, true)
+                setParams(config, mergedManifest, blameLogFile, project.path, baselineDirectory, filePrefix, true)
             }
             perConfigBaselineTask.configure { dependsOn(treeBaselineTask) }
         }

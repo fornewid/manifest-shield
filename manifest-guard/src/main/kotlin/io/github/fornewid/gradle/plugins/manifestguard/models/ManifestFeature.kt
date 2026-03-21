@@ -9,8 +9,6 @@ internal data class ManifestFeature(
         append(name)
         if (required) {
             append(" (required)")
-        } else {
-            append(" (not-required)")
         }
     }
 }

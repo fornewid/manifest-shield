@@ -37,7 +37,7 @@ internal class ManifestVisitorTest {
 
         assertThat(result.features.map { it.toBaselineString() }).containsExactly(
             "android.hardware.camera (required)",
-            "android.hardware.location (not-required)",
+            "android.hardware.location",
         ).inOrder()
     }
 

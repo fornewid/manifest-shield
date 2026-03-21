@@ -21,7 +21,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 
 internal abstract class ManifestGuardListTask : DefaultTask() {
 
@@ -63,6 +62,9 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
     abstract val baselineDir: DirectoryProperty
 
     @get:Input
+    abstract val filePrefix: Property<String>
+
+    @get:Input
     abstract val allowedFilter: Property<(String) -> Boolean>
 
     @get:Input
@@ -77,92 +79,94 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         val mapper = baselineMap.get()
         val baseline = shouldBaseline.get()
         val dir = baselineDir.get()
+        val prefix = filePrefix.get()
 
-        val exceptionMessage = StringBuilder()
+        // Check for disallowed entries across all categories
+        val allEntries = mutableListOf<Pair<String, List<ManifestEntry>>>()
+        if (guardFeatures.get()) allEntries.add("uses-feature" to manifest.features)
+        if (guardPermissions.get()) allEntries.add("uses-permission" to manifest.permissions)
+        if (guardActivities.get()) allEntries.add("activity" to manifest.activities)
+        if (guardServices.get()) allEntries.add("service" to manifest.services)
+        if (guardReceivers.get()) allEntries.add("receiver" to manifest.receivers)
+        if (guardProviders.get()) allEntries.add("provider" to manifest.providers)
 
-        if (guardPermissions.get()) {
-            processCategory(manifest.permissions, "permissions", configName, path, filter, mapper, baseline, dir, exceptionMessage)
-        }
-        if (guardActivities.get()) {
-            processCategory(manifest.activities, "activities", configName, path, filter, mapper, baseline, dir, exceptionMessage)
-        }
-        if (guardServices.get()) {
-            processCategory(manifest.services, "services", configName, path, filter, mapper, baseline, dir, exceptionMessage)
-        }
-        if (guardReceivers.get()) {
-            processCategory(manifest.receivers, "receivers", configName, path, filter, mapper, baseline, dir, exceptionMessage)
-        }
-        if (guardProviders.get()) {
-            processCategory(manifest.providers, "providers", configName, path, filter, mapper, baseline, dir, exceptionMessage)
-        }
-        if (guardFeatures.get()) {
-            processCategory(manifest.features, "features", configName, path, filter, mapper, baseline, dir, exceptionMessage)
-        }
-
-        exceptionMessage.toString().takeIf(String::isNotEmpty)?.let {
-            throw GradleException(it)
-        }
-    }
-
-    private fun processCategory(
-        entries: List<ManifestEntry>,
-        category: String,
-        configurationName: String,
-        projectPath: String,
-        allowedFilter: (String) -> Boolean,
-        baselineMap: (String) -> String?,
-        shouldBaseline: Boolean,
-        dir: org.gradle.api.file.Directory,
-        exceptionMessage: StringBuilder,
-    ) {
-        val disallowed = entries.filter { !allowedFilter(it.name) }
-        if (disallowed.isNotEmpty()) {
-            throw GradleException(buildString {
-                appendLine("Disallowed manifest entries found in $projectPath ($configurationName/$category):")
-                disallowed.forEach { appendLine("  \"${it.name}\"") }
-                appendLine()
-                appendLine("These entries must be removed based on the configured 'allowedFilter'.")
-            })
+        for ((category, entries) in allEntries) {
+            val disallowed = entries.filter { !filter(it.name) }
+            if (disallowed.isNotEmpty()) {
+                throw GradleException(buildString {
+                    appendLine("Disallowed manifest entries found in $path ($configName/$category):")
+                    disallowed.forEach { appendLine("  \"${it.name}\"") }
+                    appendLine()
+                    appendLine("These entries must be removed based on the configured 'allowedFilter'.")
+                })
+            }
         }
 
-        val reportContent = entries
-            .mapNotNull { entry -> baselineMap(entry.toBaselineString()) }
-            .joinToString("\n", postfix = if (entries.isNotEmpty()) "\n" else "")
+        // Build merged content with sections
+        val reportContent = buildMergedContent(allEntries, mapper)
 
-        val baselineFile = OutputFileUtils.baselineFile(dir, category)
+        val baselineFile = OutputFileUtils.baselineFile(dir, prefix)
 
-        val result = writeAndDiff(baselineFile, reportContent, projectPath, configurationName, category, shouldBaseline)
+        val result = if (baseline || !baselineFile.exists()) {
+            baselineFile.writeText(reportContent)
+            BaselineCreated(projectPath = path, configurationName = configName, category = prefix, baselineFile = baselineFile)
+        } else {
+            ManifestListDiff.performDiff(
+                projectPath = path,
+                configurationName = configName,
+                category = prefix,
+                expectedContent = baselineFile.readText(),
+                actualContent = reportContent,
+            )
+        }
 
         when (result) {
             is HasDiff -> {
-                val rebaselineMsg = Messaging.rebaselineMessage(projectPath, configurationName)
+                val rebaselineMsg = Messaging.rebaselineMessage(path, configName)
                 logger.error(result.createDiffMessage(withColor = true, rebaselineMessage = rebaselineMsg))
-                exceptionMessage.appendLine(result.createDiffMessage(withColor = false, rebaselineMessage = rebaselineMsg))
+                throw GradleException(result.createDiffMessage(withColor = false, rebaselineMessage = rebaselineMsg))
             }
             is NoDiff -> logger.debug(result.noDiffMessage)
             is BaselineCreated -> logger.lifecycle(result.baselineCreatedMessage(withColor = true))
         }
     }
 
-    private fun writeAndDiff(
-        baselineFile: File,
-        reportContent: String,
-        projectPath: String,
-        configurationName: String,
-        category: String,
-        shouldBaseline: Boolean,
-    ): ManifestListDiffResult {
-        return if (shouldBaseline || !baselineFile.exists()) {
-            baselineFile.writeText(reportContent)
-            BaselineCreated(projectPath = projectPath, configurationName = configurationName, category = category, baselineFile = baselineFile)
-        } else {
-            ManifestListDiff.performDiff(
-                projectPath = projectPath,
-                configurationName = configurationName,
-                category = category,
-                expectedContent = baselineFile.readText(),
-                actualContent = reportContent,
-            )
+    private fun buildMergedContent(
+        categories: List<Pair<String, List<ManifestEntry>>>,
+        baselineMap: (String) -> String?,
+    ): String = buildString {
+        val manifestLevel = listOf("uses-feature", "uses-permission")
+        val applicationLevel = listOf("activity", "service", "receiver", "provider")
+
+        val manifestCategories = categories.filter { it.first in manifestLevel && it.second.isNotEmpty() }
+        val appCategories = categories.filter { it.first in applicationLevel && it.second.isNotEmpty() }
+
+        if (manifestCategories.isNotEmpty()) {
+            appendLine("<manifest>")
+            for ((i, pair) in manifestCategories.withIndex()) {
+                val (tag, entries) = pair
+                appendLine("$tag:")
+                entries.mapNotNull { baselineMap(it.toBaselineString()) }
+                    .sorted()
+                    .forEach { appendLine("  $it") }
+                if (i < manifestCategories.size - 1) appendLine()
+            }
+        }
+
+        if (manifestCategories.isNotEmpty() && appCategories.isNotEmpty()) {
+            appendLine()
+        }
+
+        if (appCategories.isNotEmpty()) {
+            appendLine("<application>")
+            for ((i, pair) in appCategories.withIndex()) {
+                val (tag, entries) = pair
+                appendLine("$tag:")
+                entries.mapNotNull { baselineMap(it.toBaselineString()) }
+                    .sorted()
+                    .forEach { appendLine("  $it") }
+                if (i < appCategories.size - 1) appendLine()
+            }
         }
     }
 
@@ -171,6 +175,7 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         mergedManifest: org.gradle.api.provider.Provider<org.gradle.api.file.RegularFile>,
         projectPath: String,
         baselineDirectory: org.gradle.api.file.Directory,
+        filePrefix: String,
         shouldBaseline: Boolean,
     ) {
         this.mergedManifestFile.set(mergedManifest)
@@ -184,6 +189,7 @@ internal abstract class ManifestGuardListTask : DefaultTask() {
         this.guardProviders.set(config.providers)
         this.guardFeatures.set(config.features)
         this.baselineDir.set(baselineDirectory)
+        this.filePrefix.set(filePrefix)
         this.allowedFilter.set(config.allowedFilter)
         this.baselineMap.set(config.baselineMap)
 

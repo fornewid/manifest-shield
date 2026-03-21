@@ -3,7 +3,6 @@ package io.github.fornewid.gradle.plugins.manifestguard.internal.tree
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardConfiguration
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardPlugin
 import io.github.fornewid.gradle.plugins.manifestguard.internal.BlameLogParser
-import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestExtraction
 import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestVisitor
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestListDiff
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestListDiffResult
@@ -14,7 +13,6 @@ import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Messaging
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.OutputFileUtils
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Tasks.declareCompatibilities
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.TreeContentBuilder
-import io.github.fornewid.gradle.plugins.manifestguard.models.ComponentType
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestEntry
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -72,6 +70,9 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
     abstract val baselineDir: DirectoryProperty
 
     @get:Input
+    abstract val filePrefix: Property<String>
+
+    @get:Input
     abstract val baselineMap: Property<(String) -> String?>
 
     @TaskAction
@@ -82,6 +83,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         val mapper = baselineMap.get()
         val baseline = shouldBaseline.get()
         val dir = baselineDir.get()
+        val prefix = filePrefix.get()
 
         val sourceMap = if (blameLogFile.isPresent) {
             val blameFile = blameLogFile.get().asFile
@@ -95,112 +97,41 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
             emptyMap()
         }
 
-        val exceptionMessage = StringBuilder()
+        // Collect categories in document order: uses-feature, uses-permission, activity, service, receiver, provider
+        // Triple: (tag, elementType for sourceMap lookup, entries)
+        val categories = mutableListOf<Triple<String, String, List<ManifestEntry>>>()
+        if (guardFeatures.get()) categories.add(Triple("uses-feature", "uses-feature", manifest.features))
+        if (guardPermissions.get()) categories.add(Triple("uses-permission", "uses-permission", manifest.permissions))
+        if (guardActivities.get()) categories.add(Triple("activity", "activity", manifest.activities))
+        if (guardServices.get()) categories.add(Triple("service", "service", manifest.services))
+        if (guardReceivers.get()) categories.add(Triple("receiver", "receiver", manifest.receivers))
+        if (guardProviders.get()) categories.add(Triple("provider", "provider", manifest.providers))
 
-        if (guardPermissions.get()) {
-            processTreeCategory(
-                entries = manifest.permissions,
-                elementType = "uses-permission",
-                category = "permissions",
-                sourceMap = sourceMap,
-                configurationName = configName,
+        val treeContent = TreeContentBuilder.buildMerged(categories, sourceMap, mapper)
+        val baselineFile = OutputFileUtils.baselineFile(dir, "$prefix.tree")
+        val category = "$prefix.tree"
+
+        val result = if (baseline || !baselineFile.exists()) {
+            baselineFile.writeText(treeContent)
+            BaselineCreated(projectPath = path, configurationName = configName, category = category, baselineFile = baselineFile)
+        } else {
+            ManifestListDiff.performDiff(
                 projectPath = path,
-                baselineMap = mapper,
-                shouldBaseline = baseline,
-                dir = dir,
-                exceptionMessage = exceptionMessage,
+                configurationName = configName,
+                category = category,
+                expectedContent = baselineFile.readText(),
+                actualContent = treeContent,
             )
         }
-
-        for ((type, flag, entries) in listOf(
-            Triple(ComponentType.ACTIVITY, guardActivities, manifest.activities),
-            Triple(ComponentType.SERVICE, guardServices, manifest.services),
-            Triple(ComponentType.RECEIVER, guardReceivers, manifest.receivers),
-            Triple(ComponentType.PROVIDER, guardProviders, manifest.providers),
-        )) {
-            if (flag.get()) {
-                processTreeCategory(
-                    entries = entries,
-                    elementType = type.tagName,
-                    category = "${type.tagName}s",
-                    sourceMap = sourceMap,
-                    configurationName = configName,
-                    projectPath = path,
-                    baselineMap = mapper,
-                    shouldBaseline = baseline,
-                    dir = dir,
-                    exceptionMessage = exceptionMessage,
-                )
-            }
-        }
-
-        if (guardFeatures.get()) {
-            processTreeCategory(
-                entries = manifest.features,
-                elementType = "uses-feature",
-                category = "features",
-                sourceMap = sourceMap,
-                configurationName = configName,
-                projectPath = path,
-                baselineMap = mapper,
-                shouldBaseline = baseline,
-                dir = dir,
-                exceptionMessage = exceptionMessage,
-            )
-        }
-
-        exceptionMessage.toString().takeIf(String::isNotEmpty)?.let {
-            throw GradleException(it)
-        }
-    }
-
-    private fun processTreeCategory(
-        entries: List<ManifestEntry>,
-        elementType: String,
-        category: String,
-        sourceMap: Map<String, String>,
-        configurationName: String,
-        projectPath: String,
-        baselineMap: (String) -> String?,
-        shouldBaseline: Boolean,
-        dir: org.gradle.api.file.Directory,
-        exceptionMessage: StringBuilder,
-    ) {
-        val treeContent = TreeContentBuilder.build(entries, elementType, sourceMap, baselineMap)
-        val baselineFile = OutputFileUtils.baselineFile(dir, "$category.tree")
-
-        val result = writeAndDiff(baselineFile, treeContent, projectPath, configurationName, "$category.tree", shouldBaseline)
 
         when (result) {
             is HasDiff -> {
-                val rebaselineMsg = Messaging.rebaselineMessage(projectPath, configurationName)
+                val rebaselineMsg = Messaging.rebaselineMessage(path, configName)
                 logger.error(result.createDiffMessage(withColor = true, rebaselineMessage = rebaselineMsg))
-                exceptionMessage.appendLine(result.createDiffMessage(withColor = false, rebaselineMessage = rebaselineMsg))
+                throw GradleException(result.createDiffMessage(withColor = false, rebaselineMessage = rebaselineMsg))
             }
             is NoDiff -> logger.debug(result.noDiffMessage)
             is BaselineCreated -> logger.lifecycle(result.baselineCreatedMessage(withColor = true))
-        }
-    }
-
-    private fun writeAndDiff(
-        baselineFile: File,
-        reportContent: String,
-        projectPath: String,
-        configurationName: String,
-        category: String,
-        shouldBaseline: Boolean,
-    ): ManifestListDiffResult {
-        return if (shouldBaseline || !baselineFile.exists()) {
-            baselineFile.writeText(reportContent)
-            BaselineCreated(projectPath = projectPath, configurationName = configurationName, category = category, baselineFile = baselineFile)
-        } else {
-            ManifestListDiff.performDiff(
-                projectPath = projectPath,
-                configurationName = configurationName,
-                category = category,
-                expectedContent = baselineFile.readText(),
-                actualContent = reportContent,
-            )
         }
     }
 
@@ -210,6 +141,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         blameLog: File?,
         projectPath: String,
         baselineDirectory: org.gradle.api.file.Directory,
+        filePrefix: String,
         shouldBaseline: Boolean,
     ) {
         this.mergedManifestFile.set(mergedManifest)
@@ -226,6 +158,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask() {
         this.guardProviders.set(config.providers)
         this.guardFeatures.set(config.features)
         this.baselineDir.set(baselineDirectory)
+        this.filePrefix.set(filePrefix)
         this.baselineMap.set(config.baselineMap)
 
         declareCompatibilities()
