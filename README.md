@@ -1,173 +1,124 @@
-# manifest-shield
+# :shield: Manifest Shield
 
-A Gradle plugin that shields against unintentional `AndroidManifest.xml` changes.
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.fornewid.manifest-shield/manifest-shield)](https://central.sonatype.com/artifact/io.github.fornewid.manifest-shield/manifest-shield)
+[![Build](https://github.com/fornewid/manifest-shield/actions/workflows/build.yml/badge.svg)](https://github.com/fornewid/manifest-shield/actions/workflows/build.yml)
+[![License](https://img.shields.io/github/license/fornewid/manifest-shield)](LICENSE)
 
-## Features
+> :warning: This project is in an experimental stage. APIs and behavior may change without notice.
 
-- Detects changes in permissions, features, components, and more from the merged manifest
-- Generates a single baseline file per variant for easy review
-- Supports **tree format** with library attribution via AGP's manifest merge blame log
-- Configurable per-category tracking with boolean flags
+A Gradle plugin that detects unintentional changes to Android's merged `AndroidManifest.xml`.
 
-## Setup
+## Why?
+
+Android's final `AndroidManifest.xml` is the result of merging manifests from your app, libraries, and SDKs.
+When you update a dependency or add a module, unexpected permissions or components can silently appear in your app.
+
+**Manifest Shield** saves a baseline of your merged manifest and fails the build when something changes — so you always know what's in your app.
+
+Based on the [App Manifest](https://developer.android.com/guide/topics/manifest/manifest-intro) structure defined by Android.
+
+## Quick Start
+
+### Step 1: Apply the plugin
+
+Add the plugin to your module's `build.gradle.kts`:
 
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("com.android.application")
-    id("io.github.fornewid.manifest-shield")
+    id("com.android.application") // or id("com.android.library")
+    id("io.github.fornewid.manifest-shield") version "<latest-version>"
 }
 
 manifestShield {
     configuration("release") {
-        // These are enabled by default
-        usesSdk = true
-        usesPermission = true
-        usesFeature = true
-        activity = true
-        service = true
-        // ...
-
-        // These are disabled by default (opt-in)
-        metaData = true
-        usesLibrary = true
-        queries = true
-        // ...
-
-        sources = true
+        sources = true       // Enable source-attributed format
+        metaData = true      // Opt-in to track <meta-data>
     }
 }
 ```
 
-## Usage
+### Step 2: Generate a baseline
 
 ```bash
-# Save current manifest as baseline
 ./gradlew manifestShieldBaseline
-
-# Check for manifest changes
-./gradlew manifestShield
 ```
 
-## Baseline Files
-
-Baseline files are stored in the `manifestShield/` directory (configurable via `baselineDir`):
+This creates baseline files in the `manifestShield/` directory:
 
 ```
 manifestShield/
 ├── releaseAndroidManifest.txt
-└── releaseAndroidManifest.sources.txt   # when tree=true
+└── releaseAndroidManifest.sources.txt   # when sources = true
 ```
 
-### Example Output
+### Step 3: Detect changes
 
-**releaseAndroidManifest.txt**
+```bash
+./gradlew manifestShield
 ```
-uses-sdk:
-  minSdkVersion=23
-  targetSdkVersion=35
 
+If the merged manifest differs from the baseline, the build fails:
+
+```
+Manifest Changed in :app for release/list
+- android.permission.CAMERA
++ android.permission.CAMERA
++ android.permission.ACCESS_FINE_LOCATION
+
+If this is intentional, re-baseline using ./gradlew :app:manifestShieldBaselineRelease
+Or use ./gradlew manifestShieldBaseline to re-baseline in entire project.
+```
+
+## Output
+
+**releaseAndroidManifest.txt** — flat list of all manifest entries:
+
+```
 uses-feature:
-  android.hardware.camera (required)
+  android.hardware.camera
 
 uses-permission:
-  android.permission.CAMERA
+  android.permission.ACCESS_NETWORK_STATE
   android.permission.INTERNET
-  android.permission.WRITE_EXTERNAL_STORAGE (maxSdkVersion=29)
-
-permission:
-  com.example.app.CUSTOM_PERMISSION (protectionLevel=signature)
 
 activity:
-  com.example.app.MainActivity (exported)
+  io.github.fornewid.manifest.shield.sample.app.MainActivity (exported)
     intent-filter:
       action: android.intent.action.MAIN
       category: android.intent.category.LAUNCHER
-    intent-filter:
-      action: android.intent.action.VIEW
-      category: android.intent.category.DEFAULT
-      category: android.intent.category.BROWSABLE
-      data: https://example.com/content/*
-
-activity-alias:
-  com.example.app.ShortcutAlias (exported) -> com.example.app.MainActivity
-
-meta-data:
-  com.google.android.geo.API_KEY (REDACTED)
-  com.example.app.FEATURE_ENABLED (true)
-
-service:
-  com.example.app.MyService
-
-receiver:
-  com.example.app.BootReceiver (exported)
-    intent-filter:
-      action: android.intent.action.BOOT_COMPLETED
-
-provider:
-  com.example.app.MyContentProvider (exported, authorities=com.example.app.provider)
-
-uses-library:
-  org.apache.http.legacy (required)
-
-androidx.startup:
-  com.example.app.MyInitializer
 ```
 
-**releaseAndroidManifest.sources.txt**
+**releaseAndroidManifest.sources.txt** — grouped by source module/library (when `sources = true`):
+
 ```
-[:app]
-uses-sdk:
-  minSdkVersion=23
-  targetSdkVersion=35
+[:sample:app]
+uses-feature:
+  android.hardware.camera
 
 uses-permission:
   android.permission.INTERNET
 
 activity:
-  com.example.app.MainActivity (exported)
+  io.github.fornewid.manifest.shield.sample.app.MainActivity (exported)
     intent-filter:
       action: android.intent.action.MAIN
       category: android.intent.category.LAUNCHER
 
-[com.google.firebase:firebase-core:21.0.0]
+[:sample:module1]
 uses-permission:
-  android.permission.CAMERA
-
-activity:
-  com.google.firebase.FirebaseActivity
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
 ```
 
 Empty categories are omitted from the output.
-
-## Supported Manifest Elements
-
-| Level | Element | Tracked Attributes |
-|---|---|---|
-| | `uses-feature` | `name`, `glEsVersion`, `required` |
-| | `uses-permission` | `name`, `maxSdkVersion` |
-| | `uses-permission-sdk-23` | `name`, `maxSdkVersion` |
-| | `permission` | `name`, `protectionLevel` |
-| | `supports-screens` | screen size booleans, width thresholds |
-| | `compatible-screens` | screenSize + screenDensity pairs |
-| | `uses-configuration` | input hardware requirements |
-| | `supports-gl-texture` | `name` |
-| | `queries` | package, intent, provider children |
-| | `activity-alias` | `name`, `exported`, `targetActivity` |
-| | `meta-data` | `name`, `value` (REDACTED for non-primitive) |
-| | `service` | `name`, `exported`, `intent-filter` |
-| | `receiver` | `name`, `exported`, `intent-filter` |
-| | `provider` | `name`, `exported`, `authorities` |
-| | `uses-library` | `name`, `required` |
-| | `uses-native-library` | `name`, `required` |
-| | `profileable` | `shell`, `enabled` |
-| | `androidx.startup` | Initializer class names |
 
 ## Configuration
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `baselineDir` | `"manifestShield"` | Directory name for baseline files |
+| `sources` | `false` | Enable source-attributed format grouped by library/module |
 | `sdk` | `false` | Shield `<uses-sdk>` |
 | `permissions` | **`true`** | Shield `<uses-permission>` |
 | `permission` | `false` | Shield `<permission>` |
@@ -189,7 +140,6 @@ Empty categories are omitted from the output.
 | `usesLibrary` | `false` | Shield `<uses-library>` |
 | `usesNativeLibrary` | `false` | Shield `<uses-native-library>` |
 | `profileable` | `false` | Shield `<profileable>` |
-| `sources` | `false` | Enable source-attributed format grouped by library/module |
 | `allowedFilter` | `{ true }` | Filter to allow/disallow entries |
 | `baselineMap` | `{ it }` | Transform entries in baseline |
 
@@ -198,10 +148,10 @@ Empty categories are omitted from the output.
 - Android Gradle Plugin 8.0.0+
 - Gradle 8.0+
 
+## Acknowledgements
+
+Inspired by [dependency-guard](https://github.com/dropbox/dependency-guard) and [manifest-guard](https://github.com/int02h/manifest-guard).
+
 ## License
 
-```
-Copyright 2024 fornewid
-
-Licensed under the Apache License, Version 2.0
-```
+[Apache License 2.0](LICENSE)
