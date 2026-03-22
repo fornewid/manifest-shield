@@ -202,16 +202,8 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
-    fun `baseline excludes intent-filters when intentFilter is disabled`() {
-        val pluginConfig = """
-            manifestShield {
-                configuration("release") {
-                    intentFilter = false
-                }
-            }
-        """.trimIndent()
-
-        AndroidProject(pluginConfig = pluginConfig).use { project ->
+    fun `baseline excludes intent-filters by default`() {
+        AndroidProject().use { project ->
             build(project, ":app:manifestShieldBaselineRelease")
 
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
@@ -222,8 +214,16 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
-    fun `baseline includes intent-filters by default`() {
-        AndroidProject().use { project ->
+    fun `baseline includes intent-filters when intentFilter is enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    intentFilter = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
             build(project, ":app:manifestShieldBaselineRelease")
 
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
@@ -262,8 +262,9 @@ internal class ManifestShieldPluginTest {
             assertThat(sources).contains("uses-permission:")
             assertThat(txt).contains("activity:")
             assertThat(sources).contains("activity:")
-            assertThat(txt).contains("intent-filter:")
-            assertThat(sources).contains("intent-filter:")
+            // intent-filter is excluded by default (intentFilter = false)
+            assertThat(txt).doesNotContain("intent-filter:")
+            assertThat(sources).doesNotContain("intent-filter:")
         }
     }
 
