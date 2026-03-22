@@ -9,7 +9,7 @@ internal object SourcesContentBuilder {
     fun build(
         entries: List<ManifestEntry>,
         elementType: String,
-        sourceMap: Map<String, String>,
+        sourceMap: Map<String, List<String>>,
         baselineMap: (String) -> String?,
     ): String {
         if (sourceMap.isEmpty()) {
@@ -21,9 +21,11 @@ internal object SourcesContentBuilder {
         val grouped = mutableMapOf<String, MutableList<String>>()
         for (entry in entries) {
             val key = "$elementType#${entry.name}"
-            val source = sourceMap[key] ?: "unknown"
+            val sources = sourceMap[key] ?: listOf("unknown")
             val line = baselineMap(entry.toBaselineString()) ?: continue
-            grouped.getOrPut(source) { mutableListOf() }.add(line)
+            for (source in sources) {
+                grouped.getOrPut(source) { mutableListOf() }.add(line)
+            }
         }
 
         return buildString {
@@ -46,7 +48,7 @@ internal object SourcesContentBuilder {
      */
     fun buildMerged(
         categories: List<Triple<String, String, List<ManifestEntry>>>,
-        sourceMap: Map<String, String>,
+        sourceMap: Map<String, List<String>>,
         baselineMap: (String) -> String?,
     ): String {
         val manifestLevel = listOf("uses-feature", "uses-permission", "permission")
@@ -58,12 +60,14 @@ internal object SourcesContentBuilder {
         for ((tag, elementType, entries) in categories) {
             for (entry in entries) {
                 val key = "$elementType#${entry.name}"
-                val source = sourceMap[key] ?: "unknown"
+                val sources = sourceMap[key] ?: listOf("unknown")
                 val line = baselineMap(entry.toBaselineString()) ?: continue
-                sourceTagEntries
-                    .getOrPut(source) { mutableMapOf() }
-                    .getOrPut(tag) { mutableListOf() }
-                    .add(line)
+                for (source in sources) {
+                    sourceTagEntries
+                        .getOrPut(source) { mutableMapOf() }
+                        .getOrPut(tag) { mutableListOf() }
+                        .add(line)
+                }
             }
         }
 
@@ -116,7 +120,7 @@ internal object SourcesContentBuilder {
      */
     fun buildMergedWithSdk(
         manifest: ManifestExtraction,
-        sourceMap: Map<String, String>,
+        sourceMap: Map<String, List<String>>,
         baselineMap: (String) -> String?,
         projectPath: String,
         enabledFlags: Map<String, Boolean>,
@@ -133,18 +137,20 @@ internal object SourcesContentBuilder {
         fun addEntries(tag: String, elementType: String, entries: List<ManifestEntry>, isComponent: Boolean = false) {
             for (entry in entries) {
                 val key = "$elementType#${entry.name}"
-                val source = sourceMap[key] ?: "unknown"
+                val entrySources = sourceMap[key] ?: listOf("unknown")
                 val line = baselineMap(entry.toBaselineString()) ?: continue
-                val lines = sourceTagEntries
-                    .getOrPut(source) { mutableMapOf() }
-                    .getOrPut(tag) { mutableListOf() }
-                lines.add(line)
-                if (isComponent && guardIntentFilters && entry is ManifestComponent && entry.intentFilters.isNotEmpty()) {
-                    for (filter in entry.intentFilters) {
-                        lines.add("  intent-filter:")
-                        filter.actions.forEach { lines.add("    action: $it") }
-                        filter.categories.forEach { lines.add("    category: $it") }
-                        filter.dataSpecs.forEach { lines.add("    data: $it") }
+                for (source in entrySources) {
+                    val lines = sourceTagEntries
+                        .getOrPut(source) { mutableMapOf() }
+                        .getOrPut(tag) { mutableListOf() }
+                    lines.add(line)
+                    if (isComponent && guardIntentFilters && entry is ManifestComponent && entry.intentFilters.isNotEmpty()) {
+                        for (filter in entry.intentFilters) {
+                            lines.add("  intent-filter:")
+                            filter.actions.forEach { lines.add("    action: $it") }
+                            filter.categories.forEach { lines.add("    category: $it") }
+                            filter.dataSpecs.forEach { lines.add("    data: $it") }
+                        }
                     }
                 }
             }

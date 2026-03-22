@@ -32,9 +32,9 @@ internal class SourcesContentBuilderTest {
             ManifestPermission("android.permission.WAKE_LOCK"),
         )
         val sourceMap = mapOf(
-            "uses-permission#android.permission.INTERNET" to "app",
-            "uses-permission#android.permission.CAMERA" to "app",
-            "uses-permission#android.permission.WAKE_LOCK" to "com.google.firebase:firebase-messaging:23.0.0",
+            "uses-permission#android.permission.INTERNET" to listOf("app"),
+            "uses-permission#android.permission.CAMERA" to listOf("app"),
+            "uses-permission#android.permission.WAKE_LOCK" to listOf("com.google.firebase:firebase-messaging:23.0.0"),
         )
         val result = SourcesContentBuilder.build(
             entries = entries,
@@ -57,8 +57,8 @@ internal class SourcesContentBuilderTest {
             ManifestComponent("com.example.DetailActivity", ComponentType.ACTIVITY, exported = false),
         )
         val sourceMap = mapOf(
-            "activity#com.example.MainActivity" to "app",
-            "activity#com.example.DetailActivity" to "app",
+            "activity#com.example.MainActivity" to listOf("app"),
+            "activity#com.example.DetailActivity" to listOf("app"),
         )
         val result = SourcesContentBuilder.build(
             entries = entries,
@@ -77,8 +77,8 @@ internal class SourcesContentBuilderTest {
             ManifestComponent("com.a.AActivity", ComponentType.ACTIVITY, exported = null),
         )
         val sourceMap = mapOf(
-            "activity#com.z.ZActivity" to "com.z:lib:1.0",
-            "activity#com.a.AActivity" to "com.a:lib:1.0",
+            "activity#com.z.ZActivity" to listOf("com.z:lib:1.0"),
+            "activity#com.a.AActivity" to listOf("com.a:lib:1.0"),
         )
         val result = SourcesContentBuilder.build(
             entries = entries,
@@ -97,8 +97,8 @@ internal class SourcesContentBuilderTest {
             ManifestPermission("android.permission.SECRET"),
         )
         val sourceMap = mapOf(
-            "uses-permission#android.permission.INTERNET" to "app",
-            "uses-permission#android.permission.SECRET" to "app",
+            "uses-permission#android.permission.INTERNET" to listOf("app"),
+            "uses-permission#android.permission.SECRET" to listOf("app"),
         )
         val result = SourcesContentBuilder.build(
             entries = entries,

@@ -15,9 +15,10 @@ internal object BlameLogParser {
     private val ELEMENT_WITH_NAME = Regex("""^([\w-]+)#(.+)$""")
     private val ELEMENT_WITHOUT_NAME = Regex("""^([\w-]+)$""")
 
-    // Matches action lines: ADDED/INJECTED from [source] /path or ADDED/INJECTED from /path
-    private val ACTION_FROM_BRACKETED = Regex("""\s*(?:ADDED|INJECTED) from \[(.+?)] (/\S+)""")
-    private val ACTION_FROM_PATH = Regex("""\s*(?:ADDED|INJECTED) from (/\S+?)(?::\d|$| reason:)""")
+    // Matches action lines: ADDED/INJECTED/MERGED/IMPLIED/CONVERTED from [source] /path
+    // REJECTED is excluded as rejected elements are not in the final merged manifest.
+    private val ACTION_FROM_BRACKETED = Regex("""\s*(?:ADDED|INJECTED|MERGED|IMPLIED|CONVERTED) from \[(.+?)] (/\S+)""")
+    private val ACTION_FROM_PATH = Regex("""\s*(?:ADDED|INJECTED|MERGED|IMPLIED|CONVERTED) from (/\S+?)(?::\d|$| reason:)""")
 
     fun parse(blameLogFile: File, projectDir: File? = null): List<BlameEntry> {
         if (!blameLogFile.exists()) return emptyList()
@@ -48,30 +49,20 @@ internal object BlameLogParser {
                 continue
             }
 
-            // Try to match action lines for current element
-            if (currentElementType != null) {
-                // First match: ADDED/INJECTED from [library] /path
+            // Try to match action lines for current element (collect ALL sources, not just first)
+            if (currentElementType != null && currentElementName != null) {
+                // Match: ADDED/INJECTED/MERGED/IMPLIED/CONVERTED from [library] /path
                 val bracketedMatch = ACTION_FROM_BRACKETED.find(line)
                 if (bracketedMatch != null) {
-                    val source = bracketedMatch.groupValues[1]
-                    if (currentElementName != null) {
-                        entries.add(BlameEntry(currentElementType, currentElementName, source))
-                    }
-                    currentElementType = null
-                    currentElementName = null
+                    entries.add(BlameEntry(currentElementType, currentElementName, bracketedMatch.groupValues[1]))
                     continue
                 }
 
-                // Second match: ADDED/INJECTED from /path (no brackets = app module)
+                // Match: ADDED/INJECTED/MERGED/IMPLIED/CONVERTED from /path (no brackets)
                 val pathMatch = ACTION_FROM_PATH.find(line)
                 if (pathMatch != null) {
-                    val filePath = pathMatch.groupValues[1]
-                    val source = resolveModuleSource(filePath, projectDir)
-                    if (currentElementName != null) {
-                        entries.add(BlameEntry(currentElementType, currentElementName, source))
-                    }
-                    currentElementType = null
-                    currentElementName = null
+                    val source = resolveModuleSource(pathMatch.groupValues[1], projectDir)
+                    entries.add(BlameEntry(currentElementType, currentElementName, source))
                     continue
                 }
             }
@@ -105,13 +96,18 @@ internal object BlameLogParser {
         }
     }
 
-    fun buildSourceMap(entries: List<BlameEntry>): Map<String, String> {
-        val map = mutableMapOf<String, String>()
+    /**
+     * Build a map from element key to list of sources.
+     * Each element may have multiple sources (e.g., ADDED from app + MERGED from library).
+     * Duplicate sources for the same element are deduplicated.
+     */
+    fun buildSourceMap(entries: List<BlameEntry>): Map<String, List<String>> {
+        val map = mutableMapOf<String, MutableList<String>>()
         for (entry in entries) {
             val key = "${entry.elementType}#${entry.elementName}"
-            // First entry wins (ADDED takes priority over later MERGED)
-            if (key !in map) {
-                map[key] = entry.source
+            val sources = map.getOrPut(key) { mutableListOf() }
+            if (entry.source !in sources) {
+                sources.add(entry.source)
             }
         }
         return map

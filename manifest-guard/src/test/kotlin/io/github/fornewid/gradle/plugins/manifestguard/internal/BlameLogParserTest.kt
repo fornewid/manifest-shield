@@ -27,6 +27,17 @@ internal class BlameLogParserTest {
     }
 
     @Test
+    fun `parse captures MERGED sources`() {
+        val entries = BlameLogParser.parse(blameLogFile, projectDir)
+
+        val internetEntries = entries.filter {
+            it.elementType == "uses-permission" && it.elementName == "android.permission.INTERNET"
+        }
+        assertThat(internetEntries).hasSize(2)
+        assertThat(internetEntries.map { it.source }).containsExactly(":app", ":module1")
+    }
+
+    @Test
     fun `parse identifies library sources`() {
         val entries = BlameLogParser.parse(blameLogFile, projectDir)
 
@@ -72,15 +83,19 @@ internal class BlameLogParserTest {
     }
 
     @Test
-    fun `buildSourceMap creates element-to-source mapping`() {
+    fun `buildSourceMap creates element-to-sources mapping with multiple sources`() {
         val entries = BlameLogParser.parse(blameLogFile, projectDir)
         val sourceMap = BlameLogParser.buildSourceMap(entries)
 
-        assertThat(sourceMap["uses-permission#android.permission.INTERNET"]).isEqualTo(":app")
+        // INTERNET has both ADDED from :app and MERGED from :module1
+        assertThat(sourceMap["uses-permission#android.permission.INTERNET"])
+            .containsExactly(":app", ":module1")
+
         assertThat(sourceMap["uses-permission#android.permission.ACCESS_NETWORK_STATE"])
-            .isEqualTo("com.google.firebase:firebase-core:21.0.0")
+            .containsExactly("com.google.firebase:firebase-core:21.0.0")
+
         assertThat(sourceMap["activity#com.google.firebase.FirebaseActivity"])
-            .isEqualTo("com.google.firebase:firebase-core:21.0.0")
+            .containsExactly("com.google.firebase:firebase-core:21.0.0")
     }
 
     @Test
@@ -96,7 +111,6 @@ internal class BlameLogParserTest {
         val internetPermission = entries.first {
             it.elementType == "uses-permission" && it.elementName == "android.permission.INTERNET"
         }
-        // Without projectDir, the raw file path is used
         assertThat(internetPermission.source).startsWith("/path/to/app/src/main/")
     }
 }
