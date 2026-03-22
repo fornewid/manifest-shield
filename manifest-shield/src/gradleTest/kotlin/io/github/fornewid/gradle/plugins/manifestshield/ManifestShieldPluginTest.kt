@@ -182,11 +182,22 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
-    fun `baseline excludes sdk when sdk is disabled`() {
+    fun `baseline excludes uses-sdk by default`() {
+        AndroidProject().use { project ->
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("uses-sdk:")
+        }
+    }
+
+    @Test
+    fun `baseline includes uses-sdk when enabled`() {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
-                    usesSdk = false
+                    usesSdk = true
                 }
             }
         """.trimIndent()
@@ -196,8 +207,8 @@ internal class ManifestShieldPluginTest {
 
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
-            assertThat(baseline).doesNotContain("uses-sdk:")
-            assertThat(baseline).contains("uses-permission:")
+            assertThat(baseline).contains("uses-sdk:")
+            assertThat(baseline).contains("minSdkVersion=")
         }
     }
 
