@@ -6,7 +6,7 @@ import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestPermission
 import org.junit.jupiter.api.Test
 
-internal class TreeContentBuilderTest {
+internal class SourcesContentBuilderTest {
 
     @Test
     fun `build with empty source map appends unknown`() {
@@ -14,7 +14,7 @@ internal class TreeContentBuilderTest {
             ManifestPermission("android.permission.INTERNET"),
             ManifestPermission("android.permission.CAMERA"),
         )
-        val result = TreeContentBuilder.build(
+        val result = SourcesContentBuilder.build(
             entries = entries,
             elementType = "uses-permission",
             sourceMap = emptyMap(),
@@ -36,7 +36,7 @@ internal class TreeContentBuilderTest {
             "uses-permission#android.permission.CAMERA" to "app",
             "uses-permission#android.permission.WAKE_LOCK" to "com.google.firebase:firebase-messaging:23.0.0",
         )
-        val result = TreeContentBuilder.build(
+        val result = SourcesContentBuilder.build(
             entries = entries,
             elementType = "uses-permission",
             sourceMap = sourceMap,
@@ -60,7 +60,7 @@ internal class TreeContentBuilderTest {
             "activity#com.example.MainActivity" to "app",
             "activity#com.example.DetailActivity" to "app",
         )
-        val result = TreeContentBuilder.build(
+        val result = SourcesContentBuilder.build(
             entries = entries,
             elementType = "activity",
             sourceMap = sourceMap,
@@ -80,7 +80,7 @@ internal class TreeContentBuilderTest {
             "activity#com.z.ZActivity" to "com.z:lib:1.0",
             "activity#com.a.AActivity" to "com.a:lib:1.0",
         )
-        val result = TreeContentBuilder.build(
+        val result = SourcesContentBuilder.build(
             entries = entries,
             elementType = "activity",
             sourceMap = sourceMap,
@@ -100,7 +100,7 @@ internal class TreeContentBuilderTest {
             "uses-permission#android.permission.INTERNET" to "app",
             "uses-permission#android.permission.SECRET" to "app",
         )
-        val result = TreeContentBuilder.build(
+        val result = SourcesContentBuilder.build(
             entries = entries,
             elementType = "uses-permission",
             sourceMap = sourceMap,
@@ -112,7 +112,7 @@ internal class TreeContentBuilderTest {
 
     @Test
     fun `build with empty entries returns empty string`() {
-        val result = TreeContentBuilder.build(
+        val result = SourcesContentBuilder.build(
             entries = emptyList(),
             elementType = "uses-permission",
             sourceMap = emptyMap(),

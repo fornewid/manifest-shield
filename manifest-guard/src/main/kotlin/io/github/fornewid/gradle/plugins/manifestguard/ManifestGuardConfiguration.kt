@@ -102,9 +102,9 @@ public open class ManifestGuardConfiguration @Inject constructor(
     @get:Input
     public var profileable: Boolean = false
 
-    /** Enable tree format with library attribution from blame log */
+    /** Enable source-attributed format grouped by library/module origin */
     @get:Input
-    public var tree: Boolean = false
+    public var sources: Boolean = false
 
     /** Filter to determine if a manifest entry is allowed */
     @get:Input

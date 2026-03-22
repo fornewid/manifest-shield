@@ -4,7 +4,7 @@ import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestExtracti
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestEntry
 
-internal object TreeContentBuilder {
+internal object SourcesContentBuilder {
 
     fun build(
         entries: List<ManifestEntry>,

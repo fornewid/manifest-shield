@@ -1,4 +1,4 @@
-package io.github.fornewid.gradle.plugins.manifestguard.internal.tree
+package io.github.fornewid.gradle.plugins.manifestguard.internal.sources
 
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardConfiguration
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardPlugin
@@ -15,7 +15,7 @@ import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.ManifestLi
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Messaging
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.OutputFileUtils
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.Tasks.declareCompatibilities
-import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.TreeContentBuilder
+import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.SourcesContentBuilder
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestguard.models.ManifestEntry
 import org.gradle.api.DefaultTask
@@ -30,7 +30,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 
-internal abstract class ManifestTreeDiffTask : DefaultTask(), GuardFlags {
+internal abstract class ManifestSourcesDiffTask : DefaultTask(), GuardFlags {
 
     init {
         group = ManifestGuardPlugin.MANIFEST_GUARD_TASK_GROUP
@@ -110,7 +110,7 @@ internal abstract class ManifestTreeDiffTask : DefaultTask(), GuardFlags {
             emptyMap()
         }
 
-        val treeContent = TreeContentBuilder.buildMergedWithSdk(
+        val treeContent = SourcesContentBuilder.buildMergedWithSdk(
             manifest = manifest,
             sourceMap = sourceMap,
             baselineMap = mapper,
@@ -127,8 +127,8 @@ internal abstract class ManifestTreeDiffTask : DefaultTask(), GuardFlags {
             guardIntentFilters = showIntentFilters,
             guardStartup = guardStartup.get(),
         )
-        val baselineFile = OutputFileUtils.baselineFile(dir, "$prefix.tree")
-        val category = "$prefix.tree"
+        val baselineFile = OutputFileUtils.baselineFile(dir, "$prefix.sources")
+        val category = "$prefix.sources"
 
         val result = if (baseline || !baselineFile.exists()) {
             baselineFile.writeText(treeContent)

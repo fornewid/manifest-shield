@@ -34,7 +34,7 @@ manifestGuard {
         queries = true
         // ...
 
-        tree = true
+        sources = true
     }
 }
 ```
@@ -56,7 +56,7 @@ Baseline files are stored in the `manifestGuard/` directory (configurable via `b
 ```
 manifestGuard/
 ├── releaseAndroidManifest.txt
-└── releaseAndroidManifest.tree.txt   # when tree=true
+└── releaseAndroidManifest.sources.txt   # when tree=true
 ```
 
 ### Example Output
@@ -116,7 +116,7 @@ androidx.startup:
   com.example.app.MyInitializer
 ```
 
-**releaseAndroidManifest.tree.txt**
+**releaseAndroidManifest.sources.txt**
 ```
 [:app]
 <manifest>
@@ -197,7 +197,7 @@ Empty categories are omitted from the output.
 | `usesLibrary` | `false` | Guard `<uses-library>` |
 | `usesNativeLibrary` | `false` | Guard `<uses-native-library>` |
 | `profileable` | `false` | Guard `<profileable>` |
-| `tree` | `false` | Enable tree format with library attribution |
+| `sources` | `false` | Enable source-attributed format grouped by library/module |
 | `allowedFilter` | `{ true }` | Filter to allow/disallow entries |
 | `baselineMap` | `{ it }` | Transform entries in baseline |
 

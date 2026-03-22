@@ -235,13 +235,13 @@ internal class ManifestGuardPluginTest {
     }
 
     @Test
-    fun `tree baseline matches txt baseline content`() {
+    fun `sources baseline matches txt baseline content`() {
         val pluginConfig = """
             manifestGuard {
                 configuration("release") {
                     permissions = true
                     activities = true
-                    tree = true
+                    sources = true
                 }
             }
         """.trimIndent()
@@ -250,19 +250,19 @@ internal class ManifestGuardPluginTest {
             build(project, ":app:manifestGuardBaselineRelease")
 
             val txt = project.readBaselineFile("manifestGuard/releaseAndroidManifest.txt")
-            val tree = project.readBaselineFile("manifestGuard/releaseAndroidManifest.tree.txt")
+            val sources = project.readBaselineFile("manifestGuard/releaseAndroidManifest.sources.txt")
             assertThat(txt).isNotNull()
-            assertThat(tree).isNotNull()
+            assertThat(sources).isNotNull()
 
             // Both should contain the same categories
             assertThat(txt).contains("uses-sdk:")
-            assertThat(tree).contains("uses-sdk:")
+            assertThat(sources).contains("uses-sdk:")
             assertThat(txt).contains("uses-permission:")
-            assertThat(tree).contains("uses-permission:")
+            assertThat(sources).contains("uses-permission:")
             assertThat(txt).contains("activity:")
-            assertThat(tree).contains("activity:")
+            assertThat(sources).contains("activity:")
             assertThat(txt).contains("intent-filter:")
-            assertThat(tree).contains("intent-filter:")
+            assertThat(sources).contains("intent-filter:")
         }
     }
 

@@ -26,6 +26,6 @@ manifestGuard {
         receivers = true
         providers = true
         features = true
-        tree = true
+        sources = true
     }
 }

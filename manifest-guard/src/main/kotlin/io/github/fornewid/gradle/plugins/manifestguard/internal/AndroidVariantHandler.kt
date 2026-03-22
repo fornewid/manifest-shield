@@ -6,7 +6,7 @@ import com.android.build.api.variant.Variant
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardConfiguration
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardPluginExtension
 import io.github.fornewid.gradle.plugins.manifestguard.internal.list.ManifestGuardListTask
-import io.github.fornewid.gradle.plugins.manifestguard.internal.tree.ManifestTreeDiffTask
+import io.github.fornewid.gradle.plugins.manifestguard.internal.sources.ManifestSourcesDiffTask
 import io.github.fornewid.gradle.plugins.manifestguard.internal.utils.OutputFileUtils
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
@@ -72,22 +72,22 @@ internal object AndroidVariantHandler {
         }
         baselineTask.configure { dependsOn(perConfigBaselineTask) }
 
-        if (config.tree) {
-            val treeGuardTask = project.tasks.register(
-                "manifestGuardTree$capitalizedName",
-                ManifestTreeDiffTask::class.java
+        if (config.sources) {
+            val sourcesGuardTask = project.tasks.register(
+                "manifestGuardSources$capitalizedName",
+                ManifestSourcesDiffTask::class.java
             ) {
                 setParams(config, mergedManifest, blameLogFile, project.path, project.rootDir, baselineDirectory, filePrefix, false)
             }
-            perConfigGuardTask.configure { dependsOn(treeGuardTask) }
+            perConfigGuardTask.configure { dependsOn(sourcesGuardTask) }
 
-            val treeBaselineTask = project.tasks.register(
-                "manifestGuardTreeBaseline$capitalizedName",
-                ManifestTreeDiffTask::class.java
+            val sourcesBaselineTask = project.tasks.register(
+                "manifestGuardSourcesBaseline$capitalizedName",
+                ManifestSourcesDiffTask::class.java
             ) {
                 setParams(config, mergedManifest, blameLogFile, project.path, project.rootDir, baselineDirectory, filePrefix, true)
             }
-            perConfigBaselineTask.configure { dependsOn(treeBaselineTask) }
+            perConfigBaselineTask.configure { dependsOn(sourcesBaselineTask) }
         }
     }
 }

@@ -19,10 +19,10 @@ public class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuardConfig
 	public final fun getReceivers ()Z
 	public final fun getSdk ()Z
 	public final fun getServices ()Z
+	public final fun getSources ()Z
 	public final fun getStartup ()Z
 	public final fun getSupportsGlTexture ()Z
 	public final fun getSupportsScreens ()Z
-	public final fun getTree ()Z
 	public final fun getUsesConfiguration ()Z
 	public final fun getUsesLibrary ()Z
 	public final fun getUsesNativeLibrary ()Z
@@ -43,10 +43,10 @@ public class io/github/fornewid/gradle/plugins/manifestguard/ManifestGuardConfig
 	public final fun setReceivers (Z)V
 	public final fun setSdk (Z)V
 	public final fun setServices (Z)V
+	public final fun setSources (Z)V
 	public final fun setStartup (Z)V
 	public final fun setSupportsGlTexture (Z)V
 	public final fun setSupportsScreens (Z)V
-	public final fun setTree (Z)V
 	public final fun setUsesConfiguration (Z)V
 	public final fun setUsesLibrary (Z)V
 	public final fun setUsesNativeLibrary (Z)V
