@@ -135,7 +135,6 @@ Empty categories are omitted from the output.
 | `usesNativeLibrary` | `false` | Shield `<uses-native-library>` |
 | `profileable` | `false` | Shield `<profileable>` |
 | `allowedFilter` | `{ true }` | Filter to allow/disallow entries |
-| `baselineMap` | `{ it }` | Transform entries in baseline |
 
 ## Requirements
 

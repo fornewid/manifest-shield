@@ -83,15 +83,11 @@ internal abstract class ManifestSourcesDiffTask : DefaultTask(), ShieldFlags {
     @get:Input
     abstract val filePrefix: Property<String>
 
-    @get:Input
-    abstract val baselineMap: Property<(String) -> String?>
-
     @TaskAction
     internal fun execute() {
         val manifest = ManifestVisitor.parse(mergedManifestFile.get().asFile)
         val configName = configurationName.get()
         val path = projectPath.get()
-        val mapper = baselineMap.get()
         val baseline = shouldBaseline.get()
         val dir = baselineDir.get()
         val prefix = filePrefix.get()
@@ -110,7 +106,6 @@ internal abstract class ManifestSourcesDiffTask : DefaultTask(), ShieldFlags {
         val sourcesContent = SourcesContentBuilder.buildMergedWithSdk(
             manifest = manifest,
             sourceMap = sourceMap,
-            baselineMap = mapper,
             projectPath = path,
             flags = EnabledCategories.from(this),
         )
@@ -160,8 +155,6 @@ internal abstract class ManifestSourcesDiffTask : DefaultTask(), ShieldFlags {
         applyConfig(config)
         this.baselineDir.set(baselineDirectory)
         this.filePrefix.set(filePrefix)
-        this.baselineMap.set(config.baselineMap)
-
         declareCompatibilities()
     }
 }

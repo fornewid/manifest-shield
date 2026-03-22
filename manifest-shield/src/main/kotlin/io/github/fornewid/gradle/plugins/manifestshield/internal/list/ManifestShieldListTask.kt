@@ -75,16 +75,12 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
     @get:Input
     abstract val allowedFilter: Property<(String) -> Boolean>
 
-    @get:Input
-    abstract val baselineMap: Property<(String) -> String?>
-
     @TaskAction
     internal fun execute() {
         val manifest = ManifestVisitor.parse(mergedManifestFile.get().asFile)
         val configName = configurationName.get()
         val path = projectPath.get()
         val filter = allowedFilter.get()
-        val mapper = baselineMap.get()
         val baseline = shouldBaseline.get()
         val dir = baselineDir.get()
         val prefix = filePrefix.get()
@@ -104,7 +100,7 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             }
         }
 
-        val reportContent = buildMergedContent(manifest, mapper, showIntentFilters)
+        val reportContent = buildMergedContent(manifest, showIntentFilters)
 
         val baselineFile = OutputFileUtils.baselineFile(dir, prefix)
 
@@ -147,7 +143,6 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
 
     private fun buildMergedContent(
         manifest: ManifestExtraction,
-        baselineMap: (String) -> String?,
         showIntentFilters: Boolean,
     ): String = buildString {
         // Collect all categories with their entries
@@ -166,16 +161,16 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
 
         // Entry-based manifest-level categories
         if (guardUsesFeature.get() && manifest.usesFeature.isNotEmpty()) {
-            sections.add(Section("uses-feature", manifest.usesFeature.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+            sections.add(Section("uses-feature", manifest.usesFeature.map { it.toBaselineString() }.sorted()))
         }
         if (guardUsesPermission.get() && manifest.usesPermission.isNotEmpty()) {
-            sections.add(Section("uses-permission", manifest.usesPermission.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+            sections.add(Section("uses-permission", manifest.usesPermission.map { it.toBaselineString() }.sorted()))
         }
         if (guardUsesPermissionSdk23.get() && manifest.usesPermissionSdk23.isNotEmpty()) {
-            sections.add(Section("uses-permission-sdk-23", manifest.usesPermissionSdk23.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+            sections.add(Section("uses-permission-sdk-23", manifest.usesPermissionSdk23.map { it.toBaselineString() }.sorted()))
         }
         if (guardPermission.get() && manifest.permission.isNotEmpty()) {
-            sections.add(Section("permission", manifest.permission.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+            sections.add(Section("permission", manifest.permission.map { it.toBaselineString() }.sorted()))
         }
         if (guardSupportsScreens.get() && manifest.supportsScreens != null) {
             val lines = manifest.supportsScreens.toBaselineLines()
@@ -189,7 +184,7 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             if (lines.isNotEmpty()) sections.add(Section("uses-configuration", lines))
         }
         if (guardSupportsGlTexture.get() && manifest.supportsGlTextures.isNotEmpty()) {
-            sections.add(Section("supports-gl-texture", manifest.supportsGlTextures.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+            sections.add(Section("supports-gl-texture", manifest.supportsGlTextures.map { it.toBaselineString() }.sorted()))
         }
         if (guardQueries.get() && manifest.queries != null) {
             val lines = manifest.queries.toBaselineLines()
@@ -200,8 +195,7 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         fun componentLines(components: List<ManifestComponent>): List<String> {
             val lines = mutableListOf<String>()
             for (comp in components.sortedBy { it.name }) {
-                val line = baselineMap(comp.toBaselineString()) ?: continue
-                lines.add(line)
+                lines.add(comp.toBaselineString())
                 if (showIntentFilters && comp.intentFilter.isNotEmpty()) {
                     for (filter in comp.intentFilter) {
                         lines.add("  intent-filter:")
@@ -227,16 +221,16 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             sections.add(Section("receiver", componentLines(manifest.receiver)))
         }
         if (guardMetaData.get() && manifest.metaData.isNotEmpty()) {
-            sections.add(Section("meta-data", manifest.metaData.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+            sections.add(Section("meta-data", manifest.metaData.map { it.toBaselineString() }.sorted()))
         }
         if (guardProvider.get() && manifest.provider.isNotEmpty()) {
             sections.add(Section("provider", componentLines(manifest.provider)))
         }
         if (guardUsesLibrary.get() && manifest.usesLibraries.isNotEmpty()) {
-            sections.add(Section("uses-library", manifest.usesLibraries.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+            sections.add(Section("uses-library", manifest.usesLibraries.map { it.toBaselineString() }.sorted()))
         }
         if (guardUsesNativeLibrary.get() && manifest.usesNativeLibraries.isNotEmpty()) {
-            sections.add(Section("uses-native-library", manifest.usesNativeLibraries.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+            sections.add(Section("uses-native-library", manifest.usesNativeLibraries.map { it.toBaselineString() }.sorted()))
         }
         if (guardProfileable.get() && manifest.profileable != null) {
             val lines = manifest.profileable.toBaselineLines()
@@ -270,7 +264,6 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         this.baselineDir.set(baselineDirectory)
         this.filePrefix.set(filePrefix)
         this.allowedFilter.set(config.allowedFilter)
-        this.baselineMap.set(config.baselineMap)
 
         declareCompatibilities()
     }
