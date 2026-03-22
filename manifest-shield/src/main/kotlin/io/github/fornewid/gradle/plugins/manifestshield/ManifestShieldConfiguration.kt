@@ -56,7 +56,7 @@ public open class ManifestShieldConfiguration @Inject constructor(
 
     /** Guard intent-filter declarations on exported components */
     @get:Input
-    public var intentFilter: Boolean = true
+    public var intentFilter: Boolean = false
 
     /** Guard androidx.startup initializer declarations */
     @get:Input
