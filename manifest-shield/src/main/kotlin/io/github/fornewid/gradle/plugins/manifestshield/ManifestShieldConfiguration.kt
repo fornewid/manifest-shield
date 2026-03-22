@@ -105,8 +105,4 @@ public open class ManifestShieldConfiguration @Inject constructor(
     /** Enable source-attributed format grouped by library/module origin */
     @get:Input
     public var sources: Boolean = false
-
-    /** Filter to determine if a manifest entry is allowed */
-    @get:Input
-    public var allowedFilter: (entryName: String) -> Boolean = { true }
 }

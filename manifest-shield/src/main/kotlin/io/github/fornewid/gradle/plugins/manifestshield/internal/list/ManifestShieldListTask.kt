@@ -15,7 +15,6 @@ import io.github.fornewid.gradle.plugins.manifestshield.internal.utils.Messaging
 import io.github.fornewid.gradle.plugins.manifestshield.internal.utils.OutputFileUtils
 import io.github.fornewid.gradle.plugins.manifestshield.internal.utils.Tasks.declareCompatibilities
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestComponent
-import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestEntry
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
@@ -72,33 +71,15 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
     @get:Input
     abstract val filePrefix: Property<String>
 
-    @get:Input
-    abstract val allowedFilter: Property<(String) -> Boolean>
-
     @TaskAction
     internal fun execute() {
         val manifest = ManifestVisitor.parse(mergedManifestFile.get().asFile)
         val configName = configurationName.get()
         val path = projectPath.get()
-        val filter = allowedFilter.get()
         val baseline = shouldBaseline.get()
         val dir = baselineDir.get()
         val prefix = filePrefix.get()
         val showIntentFilters = guardIntentFilter.get()
-
-        // Check for disallowed entries across all entry categories
-        val entryCategories = collectEntryCategories(manifest)
-        for ((category, entries) in entryCategories) {
-            val disallowed = entries.filter { !filter(it.name) }
-            if (disallowed.isNotEmpty()) {
-                throw GradleException(buildString {
-                    appendLine("Disallowed manifest entries found in $path ($configName/$category):")
-                    disallowed.forEach { appendLine("  \"${it.name}\"") }
-                    appendLine()
-                    appendLine("These entries must be removed based on the configured 'allowedFilter'.")
-                })
-            }
-        }
 
         val reportContent = buildMergedContent(manifest, showIntentFilters)
 
@@ -126,19 +107,6 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             is NoDiff -> logger.debug(result.noDiffMessage)
             is BaselineCreated -> logger.lifecycle(result.baselineCreatedMessage(withColor = true))
         }
-    }
-
-    private fun collectEntryCategories(manifest: ManifestExtraction): List<Pair<String, List<ManifestEntry>>> {
-        val entries = mutableListOf<Pair<String, List<ManifestEntry>>>()
-        if (guardUsesFeature.get()) entries.add("uses-feature" to manifest.usesFeature)
-        if (guardUsesPermission.get()) entries.add("uses-permission" to manifest.usesPermission)
-        if (guardPermission.get()) entries.add("permission" to manifest.permission)
-        if (guardActivity.get()) entries.add("activity" to manifest.activity)
-        if (guardActivityAlias.get()) entries.add("activity-alias" to manifest.activityAlias)
-        if (guardService.get()) entries.add("service" to manifest.service)
-        if (guardReceiver.get()) entries.add("receiver" to manifest.receiver)
-        if (guardProvider.get()) entries.add("provider" to manifest.provider)
-        return entries
     }
 
     private fun buildMergedContent(
@@ -263,7 +231,6 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         applyConfig(config)
         this.baselineDir.set(baselineDirectory)
         this.filePrefix.set(filePrefix)
-        this.allowedFilter.set(config.allowedFilter)
 
         declareCompatibilities()
     }

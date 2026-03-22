@@ -2,7 +2,6 @@ public class io/github/fornewid/gradle/plugins/manifestshield/ManifestShieldConf
 	public fun <init> (Ljava/lang/String;)V
 	public final fun getActivity ()Z
 	public final fun getActivityAlias ()Z
-	public final fun getAllowedFilter ()Lkotlin/jvm/functions/Function1;
 	public final fun getCompatibleScreens ()Z
 	public final fun getConfigurationName ()Ljava/lang/String;
 	public final fun getIntentFilter ()Z
@@ -27,7 +26,6 @@ public class io/github/fornewid/gradle/plugins/manifestshield/ManifestShieldConf
 	public final fun getUsesSdk ()Z
 	public final fun setActivity (Z)V
 	public final fun setActivityAlias (Z)V
-	public final fun setAllowedFilter (Lkotlin/jvm/functions/Function1;)V
 	public final fun setCompatibleScreens (Z)V
 	public final fun setIntentFilter (Z)V
 	public final fun setMetaData (Z)V

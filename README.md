@@ -134,8 +134,6 @@ Empty categories are omitted from the output.
 | `usesLibrary` | `false` | Shield `<uses-library>` |
 | `usesNativeLibrary` | `false` | Shield `<uses-native-library>` |
 | `profileable` | `false` | Shield `<profileable>` |
-| `allowedFilter` | `{ true }` | Filter to allow/disallow entries |
-
 ## Requirements
 
 - Android Gradle Plugin 8.0.0+
