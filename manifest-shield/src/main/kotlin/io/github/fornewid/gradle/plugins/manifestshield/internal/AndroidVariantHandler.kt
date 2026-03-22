@@ -52,9 +52,8 @@ internal object AndroidVariantHandler {
         val capitalizedName = config.configurationName.capitalize()
         val baselineDirectory = OutputFileUtils.manifestShieldDir(project, baselineDir)
         val filePrefix = "${config.configurationName}AndroidManifest"
-        val blameLogFile = project.layout.buildDirectory
+        val blameLogProvider = project.layout.buildDirectory
             .file("outputs/logs/manifest-merger-${config.configurationName}-report.txt")
-            .get().asFile
 
         val perConfigGuardTask = project.tasks.register(
             "manifestShield$capitalizedName",
@@ -77,7 +76,7 @@ internal object AndroidVariantHandler {
                 "manifestShieldSources$capitalizedName",
                 ManifestSourcesDiffTask::class.java
             ) {
-                setParams(config, mergedManifest, blameLogFile, project.path, project.rootDir, baselineDirectory, filePrefix, false)
+                setParams(config, mergedManifest, blameLogProvider, project.path, project.rootDir, baselineDirectory, filePrefix, false)
             }
             perConfigGuardTask.configure { dependsOn(sourcesGuardTask) }
 
@@ -85,7 +84,7 @@ internal object AndroidVariantHandler {
                 "manifestShieldSourcesBaseline$capitalizedName",
                 ManifestSourcesDiffTask::class.java
             ) {
-                setParams(config, mergedManifest, blameLogFile, project.path, project.rootDir, baselineDirectory, filePrefix, true)
+                setParams(config, mergedManifest, blameLogProvider, project.path, project.rootDir, baselineDirectory, filePrefix, true)
             }
             perConfigBaselineTask.configure { dependsOn(sourcesBaselineTask) }
         }
