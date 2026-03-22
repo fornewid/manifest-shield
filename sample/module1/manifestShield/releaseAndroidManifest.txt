@@ -1,0 +1,7 @@
+<manifest>
+uses-sdk:
+  minSdkVersion=23
+
+uses-permission:
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.INTERNET
