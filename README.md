@@ -176,12 +176,12 @@ Empty categories are omitted from the output.
 | Option | Default | Description |
 |--------|---------|-------------|
 | `baselineDir` | `"manifestShield"` | Directory name for baseline files |
-| `sdk` | **`true`** | Shield `<uses-sdk>` |
+| `sdk` | `false` | Shield `<uses-sdk>` |
 | `permissions` | **`true`** | Shield `<uses-permission>` |
-| `permissionDeclarations` | **`true`** | Shield `<permission>` |
+| `permissionDeclarations` | `false` | Shield `<permission>` |
 | `features` | **`true`** | Shield `<uses-feature>` |
 | `activities` | **`true`** | Shield `<activity>` |
-| `activityAliases` | **`true`** | Shield `<activity-alias>` |
+| `activityAliases` | `false` | Shield `<activity-alias>` |
 | `services` | **`true`** | Shield `<service>` |
 | `receivers` | **`true`** | Shield `<receiver>` |
 | `providers` | **`true`** | Shield `<provider>` |

@@ -239,6 +239,7 @@ internal class ManifestShieldPluginTest {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
+                    sdk = true
                     permissions = true
                     activities = true
                     sources = true

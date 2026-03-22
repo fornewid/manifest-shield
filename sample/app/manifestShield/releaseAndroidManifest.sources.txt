@@ -1,9 +1,5 @@
 [:sample:app]
 <manifest>
-uses-sdk:
-  minSdkVersion=23
-  targetSdkVersion=35
-
 uses-feature:
   android.hardware.camera
 

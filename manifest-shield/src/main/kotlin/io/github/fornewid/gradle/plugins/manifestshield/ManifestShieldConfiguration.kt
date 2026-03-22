@@ -20,7 +20,7 @@ public open class ManifestShieldConfiguration @Inject constructor(
 
     /** Guard uses-sdk declarations (minSdkVersion, targetSdkVersion) */
     @get:Input
-    public var sdk: Boolean = true
+    public var sdk: Boolean = false
 
     /** Guard uses-permission declarations */
     @get:Input
@@ -28,7 +28,7 @@ public open class ManifestShieldConfiguration @Inject constructor(
 
     /** Guard permission declarations */
     @get:Input
-    public var permissionDeclarations: Boolean = true
+    public var permissionDeclarations: Boolean = false
 
     /** Guard activity declarations */
     @get:Input
@@ -36,7 +36,7 @@ public open class ManifestShieldConfiguration @Inject constructor(
 
     /** Guard activity-alias declarations */
     @get:Input
-    public var activityAliases: Boolean = true
+    public var activityAliases: Boolean = false
 
     /** Guard service declarations */
     @get:Input
