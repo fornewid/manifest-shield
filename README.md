@@ -195,8 +195,8 @@ Empty categories are omitted from the output.
 
 ## Requirements
 
-- Android Gradle Plugin 7.1.0+
-- Gradle 7.x+
+- Android Gradle Plugin 8.0.0+
+- Gradle 8.0+
 
 ## License
 

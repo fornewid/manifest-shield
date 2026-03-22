@@ -4,7 +4,7 @@
 
 - The current year is 2026. All reviews must be based on the latest code in the PR, not historical commits.
 - This is an Android Gradle plugin written in Kotlin, targeting Kotlin language version 1.4 for compatibility.
-- AGP (Android Gradle Plugin) 7.1.0+ is the minimum supported version for consumers; AGP 8.8.0 is used for the sample/build.
+- AGP 8.0.0+ is the minimum supported version for consumers; AGP 8.8.0 is used for the sample/build.
 
 ## Review Focus
 

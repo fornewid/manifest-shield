@@ -20,14 +20,14 @@ version = VERSION_NAME
 
 tasks.withType<KotlinCompile>().configureEach {
   compilerOptions {
-    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
-    apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_4)
-    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_4)
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8)
+    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8)
   }
 }
 
 tasks.withType<JavaCompile>().configureEach {
-  options.release.set(8)
+  options.release.set(11)
 }
 
 kotlin {
@@ -50,7 +50,7 @@ mavenPublishing {
 
 dependencies {
   compileOnly(gradleApi())
-  compileOnly("com.android.tools.build:gradle:7.1.0")
+  compileOnly("com.android.tools.build:gradle:8.0.0")
 }
 
 val deleteOldGradleTests = tasks.register<Delete>("deleteOldGradleTests") {
