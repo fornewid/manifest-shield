@@ -84,9 +84,6 @@ uses-permission:
 
 activity:
   io.github.fornewid.manifest.shield.sample.app.MainActivity (exported)
-    intent-filter:
-      action: android.intent.action.MAIN
-      category: android.intent.category.LAUNCHER
 ```
 
 **releaseAndroidManifest.sources.txt** — grouped by source module/library (when `sources = true`):
@@ -101,9 +98,6 @@ uses-permission:
 
 activity:
   io.github.fornewid.manifest.shield.sample.app.MainActivity (exported)
-    intent-filter:
-      action: android.intent.action.MAIN
-      category: android.intent.category.LAUNCHER
 
 [:sample:module1]
 uses-permission:
@@ -128,7 +122,7 @@ Empty categories are omitted from the output.
 | `services` | **`true`** | Shield `<service>` |
 | `receivers` | **`true`** | Shield `<receiver>` |
 | `providers` | **`true`** | Shield `<provider>` |
-| `intentFilter` | **`true`** | Shield `<intent-filter>` on components |
+| `intentFilter` | `false` | Shield `<intent-filter>` on components |
 | `startup` | **`true`** | Shield `androidx.startup` initializers |
 | `usesPermissionSdk23` | `false` | Shield `<uses-permission-sdk-23>` |
 | `supportsScreens` | `false` | Shield `<supports-screens>` |
