@@ -109,8 +109,9 @@ Update these files in order:
 6. `EnabledCategories.kt` — Add field + `from()` mapping
 7. `ManifestShieldListTask.kt` — Add to section builder
 8. `SourcesContentBuilder.kt` — Add to source-grouped output
-9. Add paired gradleTest (include by default / exclude when disabled, or vice versa)
-10. Update `README.md` configuration table
+9. Add unit tests for model `toBaselineString()` and parsing logic
+10. Add paired gradleTest (include by default / exclude when disabled, or vice versa)
+11. Update `README.md` configuration table
 
 Reference:
 - https://developer.android.com/guide/topics/manifest/manifest-element
