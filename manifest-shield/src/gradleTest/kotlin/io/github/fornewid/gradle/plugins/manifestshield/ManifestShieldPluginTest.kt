@@ -975,7 +975,7 @@ internal class ManifestShieldPluginTest {
                 configuration("release") {
                     usesPermission = true
                     baselineMap = { entry ->
-                        if (entry.contains("INTERNET")) null else entry
+                        entry.contains("INTERNET") ? null : entry
                     }
                 }
             }
