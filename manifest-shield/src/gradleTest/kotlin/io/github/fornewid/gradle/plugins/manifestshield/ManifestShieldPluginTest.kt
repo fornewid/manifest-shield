@@ -837,14 +837,32 @@ internal class ManifestShieldPluginTest {
 
 
     @Test
-    fun `tasks report configuration cache incompatibility gracefully`() {
+    fun `configuration cache is reused on subsequent run`() {
         AndroidProject().use { project ->
-            val result = build(
+            // First run: creates baseline directory + stores CC entry
+            val first = build(
                 project,
                 ":app:manifestShieldBaselineRelease",
                 "--configuration-cache",
             )
-            assertThat(result.output).contains("Manifest Shield baseline created")
+            assertThat(first.output).contains("Manifest Shield baseline created")
+            assertThat(first.output).contains("Configuration cache entry stored")
+
+            // Second run: CC invalidated because manifestShield/ dir was created
+            // This run re-stores the CC entry with the new file system state
+            build(
+                project,
+                ":app:manifestShieldBaselineRelease",
+                "--configuration-cache",
+            )
+
+            // Third run: file system is stable, CC should be reused
+            val third = build(
+                project,
+                ":app:manifestShieldBaselineRelease",
+                "--configuration-cache",
+            )
+            assertThat(third.output).contains("Reusing configuration cache")
         }
     }
 }
