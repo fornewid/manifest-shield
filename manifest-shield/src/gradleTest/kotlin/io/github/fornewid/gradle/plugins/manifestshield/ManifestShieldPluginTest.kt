@@ -246,6 +246,177 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
+    fun `baseline excludes permission by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <permission android:name="com.example.CUSTOM" android:protectionLevel="signature" />
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("permission:")
+        }
+    }
+
+    @Test
+    fun `baseline includes permission when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    permission = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <permission android:name="com.example.CUSTOM" android:protectionLevel="signature" />
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("permission:")
+            assertThat(baseline).contains("com.example.CUSTOM")
+        }
+    }
+
+    @Test
+    fun `baseline excludes activity-alias by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <activity-alias
+                            android:name=".Shortcut"
+                            android:targetActivity=".MainActivity"
+                            android:exported="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("activity-alias:")
+        }
+    }
+
+    @Test
+    fun `baseline includes activity-alias when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    activityAlias = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <activity-alias
+                            android:name=".Shortcut"
+                            android:targetActivity=".MainActivity"
+                            android:exported="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("activity-alias:")
+            assertThat(baseline).contains("Shortcut")
+        }
+    }
+
+    @Test
+    fun `baseline excludes uses-permission-sdk-23 by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <uses-permission-sdk-23 android:name="android.permission.ACCESS_FINE_LOCATION" />
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("uses-permission-sdk-23:")
+        }
+    }
+
+    @Test
+    fun `baseline includes uses-permission-sdk-23 when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    usesPermissionSdk23 = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <uses-permission-sdk-23 android:name="android.permission.ACCESS_FINE_LOCATION" />
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("uses-permission-sdk-23:")
+            assertThat(baseline).contains("android.permission.ACCESS_FINE_LOCATION")
+        }
+    }
+
+    @Test
     fun `baseline includes startup by default`() {
         AndroidProject().use { project ->
             project.updateManifest(
