@@ -34,4 +34,10 @@ internal class ManifestMetaDataTest {
         val metaData = ManifestMetaData(name = "com.example.NO_VALUE", value = null)
         assertThat(metaData.toBaselineString()).isEqualTo("com.example.NO_VALUE")
     }
+
+    @Test
+    fun `toBaselineString with resource`() {
+        val metaData = ManifestMetaData(name = "com.example.CONFIG", resource = "@xml/config")
+        assertThat(metaData.toBaselineString()).isEqualTo("com.example.CONFIG (resource=@xml/config)")
+    }
 }

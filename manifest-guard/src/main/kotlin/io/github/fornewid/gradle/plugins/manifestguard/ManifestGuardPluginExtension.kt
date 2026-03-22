@@ -2,6 +2,7 @@ package io.github.fornewid.gradle.plugins.manifestguard
 
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
 import javax.inject.Inject
 
 /**
@@ -10,8 +11,8 @@ import javax.inject.Inject
 public open class ManifestGuardPluginExtension @Inject constructor(
     private val objects: ObjectFactory
 ) {
-    /** Name of the directory to store baseline files (default: "manifest") */
-    public var baselineDir: String = "manifestGuard"
+    /** Name of the directory to store baseline files (default: "manifestGuard") */
+    public val baselineDir: Property<String> = objects.property(String::class.java).convention("manifestGuard")
 
     internal val configurations = objects.domainObjectContainer(ManifestGuardConfiguration::class.java)
 
@@ -23,10 +24,11 @@ public open class ManifestGuardPluginExtension @Inject constructor(
      * Supports configuration in build files.
      *
      * manifestGuard {
+     *   baselineDir.set("custom-dir")
      *   configuration("release") {
      *     permissions = true
      *     activities = true
-     *     tree = true
+     *     sources = true
      *   }
      * }
      */

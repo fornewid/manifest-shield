@@ -29,7 +29,7 @@ internal object AndroidVariantHandler {
         androidComponents.onVariants { variant ->
             extension.configurations.configureEach {
                 if (configurationName == variant.name) {
-                    registerTasks(project, extension.baselineDir, this, variant, guardTask, baselineTask)
+                    registerTasks(project, extension.baselineDir.get(), this, variant, guardTask, baselineTask)
                 }
             }
         }

@@ -3,6 +3,7 @@ package io.github.fornewid.gradle.plugins.manifestguard.internal.sources
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardConfiguration
 import io.github.fornewid.gradle.plugins.manifestguard.ManifestGuardPlugin
 import io.github.fornewid.gradle.plugins.manifestguard.internal.BlameLogParser
+import io.github.fornewid.gradle.plugins.manifestguard.internal.EnabledCategories
 import io.github.fornewid.gradle.plugins.manifestguard.internal.GuardFlags
 import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestExtraction
 import io.github.fornewid.gradle.plugins.manifestguard.internal.ManifestVisitor
@@ -95,8 +96,6 @@ internal abstract class ManifestSourcesDiffTask : DefaultTask(), GuardFlags {
         val baseline = shouldBaseline.get()
         val dir = baselineDir.get()
         val prefix = filePrefix.get()
-        val showIntentFilters = guardIntentFilters.get()
-
         val sourceMap = if (blameLogFile.isPresent) {
             val blameFile = blameLogFile.get().asFile
             if (blameFile.exists()) {
@@ -110,36 +109,12 @@ internal abstract class ManifestSourcesDiffTask : DefaultTask(), GuardFlags {
             emptyMap()
         }
 
-        val enabledFlags = mapOf(
-            "sdk" to guardSdk.get(),
-            "features" to guardFeatures.get(),
-            "permissions" to guardPermissions.get(),
-            "permissionsSdk23" to guardPermissionsSdk23.get(),
-            "permissionDeclarations" to guardPermissionDeclarations.get(),
-            "supportsScreens" to guardSupportsScreens.get(),
-            "compatibleScreens" to guardCompatibleScreens.get(),
-            "usesConfiguration" to guardUsesConfiguration.get(),
-            "supportsGlTexture" to guardSupportsGlTexture.get(),
-            "queries" to guardQueries.get(),
-            "activities" to guardActivities.get(),
-            "activityAliases" to guardActivityAliases.get(),
-            "metaData" to guardMetaData.get(),
-            "services" to guardServices.get(),
-            "receivers" to guardReceivers.get(),
-            "providers" to guardProviders.get(),
-            "usesLibrary" to guardUsesLibrary.get(),
-            "usesNativeLibrary" to guardUsesNativeLibrary.get(),
-            "profileable" to guardProfileable.get(),
-            "intentFilters" to showIntentFilters,
-            "startup" to guardStartup.get(),
-        )
-
         val sourcesContent = SourcesContentBuilder.buildMergedWithSdk(
             manifest = manifest,
             sourceMap = sourceMap,
             baselineMap = mapper,
             projectPath = path,
-            enabledFlags = enabledFlags,
+            flags = EnabledCategories.from(this),
         )
         val baselineFile = OutputFileUtils.baselineFile(dir, "$prefix.sources")
         val category = "$prefix.sources"

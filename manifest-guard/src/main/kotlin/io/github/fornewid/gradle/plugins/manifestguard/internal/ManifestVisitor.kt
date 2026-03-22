@@ -56,8 +56,8 @@ internal object ManifestVisitor {
             .toElementList()
             .firstOrNull()
             ?.let { node ->
-                val minSdk = node.attrNS("minSdkVersion")?.toIntOrNull()
-                val targetSdk = node.attrNS("targetSdkVersion")?.toIntOrNull()
+                val minSdk = node.attrNS("minSdkVersion")
+                val targetSdk = node.attrNS("targetSdkVersion")
                 if (minSdk != null || targetSdk != null) ManifestSdk(minSdk, targetSdk) else null
             }
 
@@ -119,8 +119,8 @@ internal object ManifestVisitor {
             .toElementList().firstOrNull()?.let { node ->
                 val packages = node.getElementsByTagName("package").toElementList()
                     .mapNotNull { it.attrNS("name") }
-                val intents = node.getElementsByTagName("intent").toElementList()
-                    .map { it.parseIntentFilters().firstOrNull() ?: IntentFilterInfo(emptyList(), emptyList(), emptyList()) }
+                val intents = node.directChildElements("intent")
+                    .map { intentNode -> parseIntentContent(intentNode) }
                 val providers = node.getElementsByTagName("provider").toElementList()
                     .mapNotNull { it.attrNS("authorities") }
                 ManifestQuery(packages = packages, intents = intents, providers = providers)
@@ -135,12 +135,12 @@ internal object ManifestVisitor {
         val receivers = application?.parseComponents(ComponentType.RECEIVER).orEmpty()
         val providers = application?.parseProviders().orEmpty()
 
-        val metaData = application?.getElementsByTagName("meta-data")
-            ?.toElementList()
+        val metaData = application?.directChildElements("meta-data")
             ?.mapNotNull { node ->
                 val name = node.attrNS("name") ?: return@mapNotNull null
                 val value = node.attrNS("value")
-                ManifestMetaData(name = name, value = value)
+                val resource = node.attrNS("resource")
+                ManifestMetaData(name = name, value = value, resource = resource)
             }
             ?.distinct()?.sortedBy { it.name }
             .orEmpty()
@@ -343,6 +343,33 @@ internal object ManifestVisitor {
         "true" -> true
         "false" -> false
         else -> null
+    }
+
+    /** Parse action/category/data directly from an <intent> node (used in <queries>) */
+    private fun parseIntentContent(intentNode: Element): IntentFilterInfo {
+        val actions = intentNode.getElementsByTagName("action")
+            .toElementList().mapNotNull { it.attrNS("name") }.sorted()
+        val categories = intentNode.getElementsByTagName("category")
+            .toElementList().mapNotNull { it.attrNS("name") }.sorted()
+        val dataSpecs = intentNode.getElementsByTagName("data")
+            .toElementList()
+            .map { data ->
+                buildDataSpec(
+                    data.attrNS("scheme") ?: "", data.attrNS("host") ?: "",
+                    data.attrNS("port") ?: "", data.attrNS("path") ?: "",
+                    data.attrNS("pathPrefix") ?: "", data.attrNS("pathPattern") ?: "",
+                    data.attrNS("mimeType") ?: "",
+                )
+            }
+            .filter { it.isNotBlank() }.sorted()
+        return IntentFilterInfo(actions = actions, categories = categories, dataSpecs = dataSpecs)
+    }
+
+    /** Get direct child elements by tag name (non-recursive, unlike getElementsByTagName) */
+    private fun Element.directChildElements(tagName: String): List<Element> {
+        return (0 until childNodes.length)
+            .mapNotNull { childNodes.item(it) as? Element }
+            .filter { it.tagName == tagName }
     }
 
     private fun NodeList.toElementList(): List<Element> {

@@ -25,9 +25,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Decrypt signing credentials
-        run: release/signing-setup.sh
-        env:
-          ENCRYPT_KEY: ${{ secrets.ENCRYPT_KEY }}
+        run: release/signing-setup.sh ${{ secrets.ENCRYPT_KEY }}
 
       - name: Publish to Maven Central
         run: ./gradlew :manifest-guard:publish --no-parallel --stacktrace
@@ -39,17 +37,21 @@ jobs:
         if: always()
         run: release/signing-cleanup.sh
 
-      - name: Bump to next SNAPSHOT version
-        if: ${{ !endsWith(env.CURRENT_VERSION, '-SNAPSHOT') }}
+      - name: Read current version
+        id: version
         run: |
-          CURRENT_VERSION=$(grep 'VERSION_NAME=' manifest-guard/gradle.properties | cut -d'=' -f2)
-          if [[ ! "$CURRENT_VERSION" == *-SNAPSHOT ]]; then
-            IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
-            NEXT_VERSION="$major.$minor.$((patch + 1))-SNAPSHOT"
-            sed -i "s/VERSION_NAME=.*/VERSION_NAME=$NEXT_VERSION/" manifest-guard/gradle.properties
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add manifest-guard/gradle.properties
-            git commit -m "Prepare next development version $NEXT_VERSION"
-            git push
-          fi
+          VERSION=$(grep 'VERSION_NAME=' manifest-guard/gradle.properties | cut -d'=' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Bump to next SNAPSHOT version
+        if: ${{ !endsWith(steps.version.outputs.version, '-SNAPSHOT') }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          IFS='.' read -r major minor patch <<< "$VERSION"
+          NEXT_VERSION="$major.$minor.$((patch + 1))-SNAPSHOT"
+          sed -i "s/VERSION_NAME=.*/VERSION_NAME=$NEXT_VERSION/" manifest-guard/gradle.properties
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifest-guard/gradle.properties
+          git commit -m "Prepare next development version $NEXT_VERSION [skip ci]"
+          git push
