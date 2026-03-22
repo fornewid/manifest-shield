@@ -47,17 +47,15 @@ gradlePlugin {
 // This included build is not affected by the root project's subprojects {} block.
 val signingPropsFile = rootProject.file("../release/signing.properties")
 if (signingPropsFile.exists()) {
-  val signingProps = java.util.Properties().apply {
-    signingPropsFile.inputStream().use { load(it) }
-  }
-  signingProps.forEach { key, value ->
-    val k = key.toString()
-    val v = if (k == "signing.secretKeyRingFile") {
-      rootProject.file("../$value").absolutePath
+  val signingProps = java.util.Properties()
+  signingPropsFile.inputStream().use { signingProps.load(it) }
+  signingProps.stringPropertyNames().forEach { key ->
+    val value = signingProps.getProperty(key)
+    if (key == "signing.secretKeyRingFile") {
+      ext.set(key, rootProject.file("../$value").absolutePath)
     } else {
-      value.toString()
+      ext.set(key, value)
     }
-    ext.set(k, v)
   }
 }
 
