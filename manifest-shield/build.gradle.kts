@@ -43,6 +43,24 @@ gradlePlugin {
   }
 }
 
+// Load signing properties from release/signing.properties (created by signing-setup.sh in CI).
+// This included build is not affected by the root project's subprojects {} block.
+val signingPropsFile = rootProject.file("../release/signing.properties")
+if (signingPropsFile.exists()) {
+  val signingProps = java.util.Properties().apply {
+    signingPropsFile.inputStream().use { load(it) }
+  }
+  signingProps.forEach { key, value ->
+    val k = key.toString()
+    val v = if (k == "signing.secretKeyRingFile") {
+      rootProject.file("../$value").absolutePath
+    } else {
+      value.toString()
+    }
+    ext.set(k, v)
+  }
+}
+
 mavenPublishing {
   publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
   signAllPublications()
