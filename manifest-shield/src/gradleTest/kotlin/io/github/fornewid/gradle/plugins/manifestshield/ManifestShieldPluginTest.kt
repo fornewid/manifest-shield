@@ -235,6 +235,65 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
+    fun `baseline includes queries by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <queries>
+                        <package android:name="com.example.foo" />
+                    </queries>
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("queries:")
+            assertThat(baseline).contains("  package: com.example.foo")
+        }
+    }
+
+    @Test
+    fun `baseline excludes queries when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    queries = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <queries>
+                        <package android:name="com.example.foo" />
+                    </queries>
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("queries:")
+        }
+    }
+
+    @Test
     fun `sources baseline matches txt baseline content`() {
         val pluginConfig = """
             manifestShield {

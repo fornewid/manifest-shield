@@ -84,7 +84,7 @@ public open class ManifestShieldConfiguration @Inject constructor(
 
     /** Guard queries declarations */
     @get:Input
-    public var queries: Boolean = false
+    public var queries: Boolean = true
 
     /** Guard meta-data declarations (values redacted for non-primitives) */
     @get:Input
