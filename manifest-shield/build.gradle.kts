@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.dokka)
   alias(libs.plugins.maven.publish)
   alias(libs.plugins.binary.compatibility.validator)
+  alias(libs.plugins.plugin.publish)
 }
 
 repositories {
@@ -35,10 +36,15 @@ kotlin {
 }
 
 gradlePlugin {
+  website.set("https://github.com/fornewid/manifest-shield")
+  vcsUrl.set("https://github.com/fornewid/manifest-shield")
   plugins {
     plugins.create("manifest-shield") {
       id = "io.github.fornewid.manifest-shield"
       implementationClass = "io.github.fornewid.gradle.plugins.manifestshield.ManifestShieldPlugin"
+      displayName = "Manifest Shield"
+      description = "A Gradle plugin that detects unintentional changes to Android's merged AndroidManifest.xml."
+      tags.set(listOf("android", "manifest", "security", "gradle-plugin"))
     }
   }
 }
