@@ -246,6 +246,75 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
+    fun `baseline includes startup by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <provider
+                            android:name="androidx.startup.InitializationProvider"
+                            android:authorities="io.github.fornewid.test.androidx-startup"
+                            android:exported="false">
+                            <meta-data
+                                android:name="com.example.MyInitializer"
+                                android:value="androidx.startup" />
+                        </provider>
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("androidx.startup:")
+            assertThat(baseline).contains("MyInitializer")
+        }
+    }
+
+    @Test
+    fun `baseline excludes startup when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    startup = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <provider
+                            android:name="androidx.startup.InitializationProvider"
+                            android:authorities="io.github.fornewid.test.androidx-startup"
+                            android:exported="false">
+                            <meta-data
+                                android:name="com.example.MyInitializer"
+                                android:value="androidx.startup" />
+                        </provider>
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("androidx.startup:")
+        }
+    }
+
+    @Test
     fun `baseline includes uses-feature by default`() {
         AndroidProject().use { project ->
             project.updateManifest(
