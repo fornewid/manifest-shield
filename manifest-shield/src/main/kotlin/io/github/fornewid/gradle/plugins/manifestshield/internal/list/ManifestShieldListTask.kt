@@ -251,30 +251,11 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             sections.add(Section("androidx.startup", manifest.startupInitializers))
         }
 
-        // Render
-        val manifestSections = sections.filter { it.tag in manifestLevel }
-        val appSections = sections.filter { it.tag in applicationLevel }
-
-        if (manifestSections.isNotEmpty()) {
-            appendLine("<manifest>")
-            for ((i, section) in manifestSections.withIndex()) {
-                appendLine("${section.tag}:")
-                section.lines.forEach { appendLine("  $it") }
-                if (i < manifestSections.size - 1) appendLine()
-            }
-        }
-
-        if (manifestSections.isNotEmpty() && appSections.isNotEmpty()) {
-            appendLine()
-        }
-
-        if (appSections.isNotEmpty()) {
-            appendLine("<application>")
-            for ((i, section) in appSections.withIndex()) {
-                appendLine("${section.tag}:")
-                section.lines.forEach { appendLine("  $it") }
-                if (i < appSections.size - 1) appendLine()
-            }
+        // Render all sections in order
+        for ((i, section) in sections.withIndex()) {
+            appendLine("${section.tag}:")
+            section.lines.forEach { appendLine("  $it") }
+            if (i < sections.size - 1) appendLine()
         }
     }
 

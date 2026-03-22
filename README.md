@@ -63,7 +63,6 @@ manifestShield/
 
 **releaseAndroidManifest.txt**
 ```
-<manifest>
 uses-sdk:
   minSdkVersion=23
   targetSdkVersion=35
@@ -79,7 +78,6 @@ uses-permission:
 permission:
   com.example.app.CUSTOM_PERMISSION (protectionLevel=signature)
 
-<application>
 activity:
   com.example.app.MainActivity (exported)
     intent-filter:
@@ -119,7 +117,6 @@ androidx.startup:
 **releaseAndroidManifest.sources.txt**
 ```
 [:app]
-<manifest>
 uses-sdk:
   minSdkVersion=23
   targetSdkVersion=35
@@ -127,7 +124,6 @@ uses-sdk:
 uses-permission:
   android.permission.INTERNET
 
-<application>
 activity:
   com.example.app.MainActivity (exported)
     intent-filter:
@@ -135,11 +131,9 @@ activity:
       category: android.intent.category.LAUNCHER
 
 [com.google.firebase:firebase-core:21.0.0]
-<manifest>
 uses-permission:
   android.permission.CAMERA
 
-<application>
 activity:
   com.google.firebase.FirebaseActivity
 ```
@@ -150,7 +144,6 @@ Empty categories are omitted from the output.
 
 | Level | Element | Tracked Attributes |
 |---|---|---|
-| `<manifest>` | `uses-sdk` | `minSdkVersion`, `targetSdkVersion` |
 | | `uses-feature` | `name`, `glEsVersion`, `required` |
 | | `uses-permission` | `name`, `maxSdkVersion` |
 | | `uses-permission-sdk-23` | `name`, `maxSdkVersion` |
@@ -160,7 +153,6 @@ Empty categories are omitted from the output.
 | | `uses-configuration` | input hardware requirements |
 | | `supports-gl-texture` | `name` |
 | | `queries` | package, intent, provider children |
-| `<application>` | `activity` | `name`, `exported`, `intent-filter` |
 | | `activity-alias` | `name`, `exported`, `targetActivity` |
 | | `meta-data` | `name`, `value` (REDACTED for non-primitive) |
 | | `service` | `name`, `exported`, `intent-filter` |

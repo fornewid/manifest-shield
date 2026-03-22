@@ -83,29 +83,12 @@ internal object SourcesContentBuilder {
                 appendLine("[$source]")
                 val tagMap = sourceTagEntries[source] ?: continue
 
-                val manifestTags = categories.map { it.first }.filter { it in manifestLevel && it in tagMap }
-                val appTags = categories.map { it.first }.filter { it in applicationLevel && it in tagMap }
+                val allTags = (categories.map { it.first } + applicationLevel).distinct().filter { it in tagMap }
 
-                if (manifestTags.isNotEmpty()) {
-                    appendLine("<manifest>")
-                    for ((i, tag) in manifestTags.withIndex()) {
-                        appendLine("$tag:")
-                        tagMap[tag]?.sorted()?.forEach { appendLine("  $it") }
-                        if (i < manifestTags.size - 1) appendLine()
-                    }
-                }
-
-                if (manifestTags.isNotEmpty() && appTags.isNotEmpty()) {
-                    appendLine()
-                }
-
-                if (appTags.isNotEmpty()) {
-                    appendLine("<application>")
-                    for ((i, tag) in appTags.withIndex()) {
-                        appendLine("$tag:")
-                        tagMap[tag]?.sorted()?.forEach { appendLine("  $it") }
-                        if (i < appTags.size - 1) appendLine()
-                    }
+                for ((i, tag) in allTags.withIndex()) {
+                    appendLine("$tag:")
+                    tagMap[tag]?.sorted()?.forEach { appendLine("  $it") }
+                    if (i < allTags.size - 1) appendLine()
                 }
 
                 if (sourceIdx < sortedSources.size - 1) {
@@ -229,33 +212,18 @@ internal object SourcesContentBuilder {
                     "supports-screens", "compatible-screens", "uses-configuration", "supports-gl-texture", "queries").filter { it in tagMap })
 
                 val appTags = applicationLevel.filter { it in tagMap }
+                val allTags = manifestTags + appTags
 
-                if (manifestTags.isNotEmpty()) {
-                    appendLine("<manifest>")
-                    for ((i, tag) in manifestTags.withIndex()) {
-                        if (tag == "uses-sdk") {
-                            appendLine("uses-sdk:")
-                            manifest.usesSdk?.minSdkVersion?.let { appendLine("  minSdkVersion=$it") }
-                            manifest.usesSdk?.targetSdkVersion?.let { appendLine("  targetSdkVersion=$it") }
-                        } else {
-                            appendLine("$tag:")
-                            tagMap[tag]?.forEach { appendLine("  $it") }
-                        }
-                        if (i < manifestTags.size - 1) appendLine()
-                    }
-                }
-
-                if (manifestTags.isNotEmpty() && appTags.isNotEmpty()) {
-                    appendLine()
-                }
-
-                if (appTags.isNotEmpty()) {
-                    appendLine("<application>")
-                    for ((i, tag) in appTags.withIndex()) {
+                for ((i, tag) in allTags.withIndex()) {
+                    if (tag == "uses-sdk") {
+                        appendLine("uses-sdk:")
+                        manifest.usesSdk?.minSdkVersion?.let { appendLine("  minSdkVersion=$it") }
+                        manifest.usesSdk?.targetSdkVersion?.let { appendLine("  targetSdkVersion=$it") }
+                    } else {
                         appendLine("$tag:")
                         tagMap[tag]?.forEach { appendLine("  $it") }
-                        if (i < appTags.size - 1) appendLine()
                     }
+                    if (i < allTags.size - 1) appendLine()
                 }
 
                 if (sourceIdx < sortedSources.size - 1) {
