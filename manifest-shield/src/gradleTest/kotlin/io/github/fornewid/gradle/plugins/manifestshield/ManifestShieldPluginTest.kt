@@ -246,6 +246,170 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
+    fun `baseline excludes meta-data by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <meta-data android:name="com.example.KEY" android:value="val" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("meta-data:")
+        }
+    }
+
+    @Test
+    fun `baseline includes meta-data when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    metaData = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <meta-data android:name="com.example.KEY" android:value="val" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("meta-data:")
+            assertThat(baseline).contains("com.example.KEY")
+        }
+    }
+
+    @Test
+    fun `baseline excludes uses-library by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <uses-library android:name="org.apache.http.legacy" android:required="false" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("uses-library:")
+        }
+    }
+
+    @Test
+    fun `baseline includes uses-library when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    usesLibrary = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <uses-library android:name="org.apache.http.legacy" android:required="false" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("uses-library:")
+            assertThat(baseline).contains("org.apache.http.legacy")
+        }
+    }
+
+    @Test
+    fun `baseline excludes profileable by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <profileable android:shell="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("profileable:")
+        }
+    }
+
+    @Test
+    fun `baseline includes profileable when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    profileable = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <profileable android:shell="true" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("profileable:")
+        }
+    }
+
+    @Test
     fun `baseline excludes permission by default`() {
         AndroidProject().use { project ->
             project.updateManifest(
