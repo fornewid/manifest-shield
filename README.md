@@ -62,8 +62,8 @@ If the merged manifest differs from the baseline, the build fails:
 
 ```
 Manifest Changed in :app for release/list
-- android.permission.CAMERA
-+ android.permission.CAMERA
+- android.permission.WRITE_EXTERNAL_STORAGE
++ android.permission.WRITE_EXTERNAL_STORAGE (maxSdkVersion=28)
 + android.permission.ACCESS_FINE_LOCATION
 
 If this is intentional, re-baseline using ./gradlew :app:manifestShieldBaselineRelease
