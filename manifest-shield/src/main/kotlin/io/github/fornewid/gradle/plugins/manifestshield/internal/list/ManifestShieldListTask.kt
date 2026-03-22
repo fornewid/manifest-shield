@@ -44,17 +44,17 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
     @get:Input
     abstract val shouldBaseline: Property<Boolean>
 
-    abstract override val guardSdk: Property<Boolean>
-    abstract override val guardPermissions: Property<Boolean>
-    abstract override val guardPermissionsSdk23: Property<Boolean>
-    abstract override val guardPermissionDeclarations: Property<Boolean>
-    abstract override val guardActivities: Property<Boolean>
-    abstract override val guardActivityAliases: Property<Boolean>
-    abstract override val guardServices: Property<Boolean>
-    abstract override val guardReceivers: Property<Boolean>
-    abstract override val guardProviders: Property<Boolean>
-    abstract override val guardFeatures: Property<Boolean>
-    abstract override val guardIntentFilters: Property<Boolean>
+    abstract override val guardUsesSdk: Property<Boolean>
+    abstract override val guardUsesPermission: Property<Boolean>
+    abstract override val guardUsesPermissionSdk23: Property<Boolean>
+    abstract override val guardPermission: Property<Boolean>
+    abstract override val guardActivity: Property<Boolean>
+    abstract override val guardActivityAlias: Property<Boolean>
+    abstract override val guardService: Property<Boolean>
+    abstract override val guardReceiver: Property<Boolean>
+    abstract override val guardProvider: Property<Boolean>
+    abstract override val guardUsesFeature: Property<Boolean>
+    abstract override val guardIntentFilter: Property<Boolean>
     abstract override val guardStartup: Property<Boolean>
     abstract override val guardSupportsScreens: Property<Boolean>
     abstract override val guardCompatibleScreens: Property<Boolean>
@@ -88,7 +88,7 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         val baseline = shouldBaseline.get()
         val dir = baselineDir.get()
         val prefix = filePrefix.get()
-        val showIntentFilters = guardIntentFilters.get()
+        val showIntentFilters = guardIntentFilter.get()
 
         // Check for disallowed entries across all entry categories
         val entryCategories = collectEntryCategories(manifest)
@@ -134,14 +134,14 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
 
     private fun collectEntryCategories(manifest: ManifestExtraction): List<Pair<String, List<ManifestEntry>>> {
         val entries = mutableListOf<Pair<String, List<ManifestEntry>>>()
-        if (guardFeatures.get()) entries.add("uses-feature" to manifest.features)
-        if (guardPermissions.get()) entries.add("uses-permission" to manifest.permissions)
-        if (guardPermissionDeclarations.get()) entries.add("permission" to manifest.permissionDeclarations)
-        if (guardActivities.get()) entries.add("activity" to manifest.activities)
-        if (guardActivityAliases.get()) entries.add("activity-alias" to manifest.activityAliases)
-        if (guardServices.get()) entries.add("service" to manifest.services)
-        if (guardReceivers.get()) entries.add("receiver" to manifest.receivers)
-        if (guardProviders.get()) entries.add("provider" to manifest.providers)
+        if (guardUsesFeature.get()) entries.add("uses-feature" to manifest.usesFeature)
+        if (guardUsesPermission.get()) entries.add("uses-permission" to manifest.usesPermission)
+        if (guardPermission.get()) entries.add("permission" to manifest.permission)
+        if (guardActivity.get()) entries.add("activity" to manifest.activity)
+        if (guardActivityAlias.get()) entries.add("activity-alias" to manifest.activityAlias)
+        if (guardService.get()) entries.add("service" to manifest.service)
+        if (guardReceiver.get()) entries.add("receiver" to manifest.receiver)
+        if (guardProvider.get()) entries.add("provider" to manifest.provider)
         return entries
     }
 
@@ -161,8 +161,8 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         val sections = mutableListOf<Section>()
 
         // uses-sdk (special: not ManifestEntry based)
-        val sdk = manifest.sdk
-        if (guardSdk.get() && sdk != null) {
+        val sdk = manifest.usesSdk
+        if (guardUsesSdk.get() && sdk != null) {
             val sdkLines = mutableListOf<String>()
             sdk.minSdkVersion?.let { sdkLines.add("minSdkVersion=$it") }
             sdk.targetSdkVersion?.let { sdkLines.add("targetSdkVersion=$it") }
@@ -170,17 +170,17 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         }
 
         // Entry-based manifest-level categories
-        if (guardFeatures.get() && manifest.features.isNotEmpty()) {
-            sections.add(Section("uses-feature", manifest.features.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        if (guardUsesFeature.get() && manifest.usesFeature.isNotEmpty()) {
+            sections.add(Section("uses-feature", manifest.usesFeature.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
         }
-        if (guardPermissions.get() && manifest.permissions.isNotEmpty()) {
-            sections.add(Section("uses-permission", manifest.permissions.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        if (guardUsesPermission.get() && manifest.usesPermission.isNotEmpty()) {
+            sections.add(Section("uses-permission", manifest.usesPermission.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
         }
-        if (guardPermissionsSdk23.get() && manifest.permissionsSdk23.isNotEmpty()) {
-            sections.add(Section("uses-permission-sdk-23", manifest.permissionsSdk23.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        if (guardUsesPermissionSdk23.get() && manifest.usesPermissionSdk23.isNotEmpty()) {
+            sections.add(Section("uses-permission-sdk-23", manifest.usesPermissionSdk23.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
         }
-        if (guardPermissionDeclarations.get() && manifest.permissionDeclarations.isNotEmpty()) {
-            sections.add(Section("permission", manifest.permissionDeclarations.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
+        if (guardPermission.get() && manifest.permission.isNotEmpty()) {
+            sections.add(Section("permission", manifest.permission.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
         }
         if (guardSupportsScreens.get() && manifest.supportsScreens != null) {
             val lines = manifest.supportsScreens!!.toBaselineLines()
@@ -207,8 +207,8 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             for (comp in components.sortedBy { it.name }) {
                 val line = baselineMap(comp.toBaselineString()) ?: continue
                 lines.add(line)
-                if (showIntentFilters && comp.intentFilters.isNotEmpty()) {
-                    for (filter in comp.intentFilters) {
+                if (showIntentFilters && comp.intentFilter.isNotEmpty()) {
+                    for (filter in comp.intentFilter) {
                         lines.add("  intent-filter:")
                         filter.actions.forEach { lines.add("    action: $it") }
                         filter.categories.forEach { lines.add("    category: $it") }
@@ -219,23 +219,23 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             return lines
         }
 
-        if (guardActivities.get() && manifest.activities.isNotEmpty()) {
-            sections.add(Section("activity", componentLines(manifest.activities)))
+        if (guardActivity.get() && manifest.activity.isNotEmpty()) {
+            sections.add(Section("activity", componentLines(manifest.activity)))
         }
-        if (guardActivityAliases.get() && manifest.activityAliases.isNotEmpty()) {
-            sections.add(Section("activity-alias", componentLines(manifest.activityAliases)))
+        if (guardActivityAlias.get() && manifest.activityAlias.isNotEmpty()) {
+            sections.add(Section("activity-alias", componentLines(manifest.activityAlias)))
         }
-        if (guardServices.get() && manifest.services.isNotEmpty()) {
-            sections.add(Section("service", componentLines(manifest.services)))
+        if (guardService.get() && manifest.service.isNotEmpty()) {
+            sections.add(Section("service", componentLines(manifest.service)))
         }
-        if (guardReceivers.get() && manifest.receivers.isNotEmpty()) {
-            sections.add(Section("receiver", componentLines(manifest.receivers)))
+        if (guardReceiver.get() && manifest.receiver.isNotEmpty()) {
+            sections.add(Section("receiver", componentLines(manifest.receiver)))
         }
         if (guardMetaData.get() && manifest.metaData.isNotEmpty()) {
             sections.add(Section("meta-data", manifest.metaData.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
         }
-        if (guardProviders.get() && manifest.providers.isNotEmpty()) {
-            sections.add(Section("provider", componentLines(manifest.providers)))
+        if (guardProvider.get() && manifest.provider.isNotEmpty()) {
+            sections.add(Section("provider", componentLines(manifest.provider)))
         }
         if (guardUsesLibrary.get() && manifest.usesLibraries.isNotEmpty()) {
             sections.add(Section("uses-library", manifest.usesLibraries.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))

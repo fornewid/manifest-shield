@@ -21,11 +21,11 @@ plugins {
 manifestShield {
     configuration("release") {
         // These are enabled by default
-        sdk = true
-        permissions = true
-        features = true
-        activities = true
-        services = true
+        usesSdk = true
+        usesPermission = true
+        usesFeature = true
+        activity = true
+        service = true
         // ...
 
         // These are disabled by default (opt-in)
@@ -178,16 +178,16 @@ Empty categories are omitted from the output.
 | `baselineDir` | `"manifestShield"` | Directory name for baseline files |
 | `sdk` | `false` | Shield `<uses-sdk>` |
 | `permissions` | **`true`** | Shield `<uses-permission>` |
-| `permissionDeclarations` | `false` | Shield `<permission>` |
+| `permission` | `false` | Shield `<permission>` |
 | `features` | **`true`** | Shield `<uses-feature>` |
 | `activities` | **`true`** | Shield `<activity>` |
-| `activityAliases` | `false` | Shield `<activity-alias>` |
+| `activityAlias` | `false` | Shield `<activity-alias>` |
 | `services` | **`true`** | Shield `<service>` |
 | `receivers` | **`true`** | Shield `<receiver>` |
 | `providers` | **`true`** | Shield `<provider>` |
-| `intentFilters` | **`true`** | Shield `<intent-filter>` on components |
+| `intentFilter` | **`true`** | Shield `<intent-filter>` on components |
 | `startup` | **`true`** | Shield `androidx.startup` initializers |
-| `permissionsSdk23` | `false` | Shield `<uses-permission-sdk-23>` |
+| `usesPermissionSdk23` | `false` | Shield `<uses-permission-sdk-23>` |
 | `supportsScreens` | `false` | Shield `<supports-screens>` |
 | `compatibleScreens` | `false` | Shield `<compatible-screens>` |
 | `usesConfiguration` | `false` | Shield `<uses-configuration>` |

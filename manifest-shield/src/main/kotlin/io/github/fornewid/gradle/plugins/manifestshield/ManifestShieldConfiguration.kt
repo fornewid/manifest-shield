@@ -20,43 +20,43 @@ public open class ManifestShieldConfiguration @Inject constructor(
 
     /** Guard uses-sdk declarations (minSdkVersion, targetSdkVersion) */
     @get:Input
-    public var sdk: Boolean = false
+    public var usesSdk: Boolean = false
 
     /** Guard uses-permission declarations */
     @get:Input
-    public var permissions: Boolean = true
+    public var usesPermission: Boolean = true
 
     /** Guard permission declarations */
     @get:Input
-    public var permissionDeclarations: Boolean = false
+    public var permission: Boolean = false
 
     /** Guard activity declarations */
     @get:Input
-    public var activities: Boolean = true
+    public var activity: Boolean = true
 
     /** Guard activity-alias declarations */
     @get:Input
-    public var activityAliases: Boolean = false
+    public var activityAlias: Boolean = false
 
     /** Guard service declarations */
     @get:Input
-    public var services: Boolean = true
+    public var service: Boolean = true
 
     /** Guard receiver declarations */
     @get:Input
-    public var receivers: Boolean = true
+    public var receiver: Boolean = true
 
     /** Guard provider declarations */
     @get:Input
-    public var providers: Boolean = true
+    public var provider: Boolean = true
 
     /** Guard uses-feature declarations */
     @get:Input
-    public var features: Boolean = true
+    public var usesFeature: Boolean = true
 
     /** Guard intent-filter declarations on exported components */
     @get:Input
-    public var intentFilters: Boolean = true
+    public var intentFilter: Boolean = true
 
     /** Guard androidx.startup initializer declarations */
     @get:Input
@@ -64,7 +64,7 @@ public open class ManifestShieldConfiguration @Inject constructor(
 
     /** Guard uses-permission-sdk-23 declarations */
     @get:Input
-    public var permissionsSdk23: Boolean = false
+    public var usesPermissionSdk23: Boolean = false
 
     /** Guard supports-screens declarations */
     @get:Input

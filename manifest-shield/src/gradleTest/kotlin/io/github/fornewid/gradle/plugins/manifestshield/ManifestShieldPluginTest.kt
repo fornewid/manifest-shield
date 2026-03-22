@@ -106,12 +106,12 @@ internal class ManifestShieldPluginTest {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
-                    permissions = true
-                    activities = false
-                    services = false
-                    receivers = false
-                    providers = false
-                    features = false
+                    usesPermission = true
+                    activity = false
+                    service = false
+                    receiver = false
+                    provider = false
+                    usesFeature = false
                 }
             }
         """.trimIndent()
@@ -167,8 +167,8 @@ internal class ManifestShieldPluginTest {
             manifestShield {
                 baselineDir = "custom-baselines"
                 configuration("release") {
-                    permissions = true
-                    activities = true
+                    usesPermission = true
+                    activity = true
                 }
             }
         """.trimIndent()
@@ -186,7 +186,7 @@ internal class ManifestShieldPluginTest {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
-                    sdk = false
+                    usesSdk = false
                 }
             }
         """.trimIndent()
@@ -202,11 +202,11 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
-    fun `baseline excludes intent-filters when intentFilters is disabled`() {
+    fun `baseline excludes intent-filters when intentFilter is disabled`() {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
-                    intentFilters = false
+                    intentFilter = false
                 }
             }
         """.trimIndent()
@@ -239,9 +239,9 @@ internal class ManifestShieldPluginTest {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
-                    sdk = true
-                    permissions = true
-                    activities = true
+                    usesSdk = true
+                    usesPermission = true
+                    activity = true
                     sources = true
                 }
             }

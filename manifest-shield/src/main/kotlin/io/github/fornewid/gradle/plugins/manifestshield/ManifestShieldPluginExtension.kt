@@ -26,8 +26,8 @@ public open class ManifestShieldPluginExtension @Inject constructor(
      * manifestShield {
      *   baselineDir.set("custom-dir")
      *   configuration("release") {
-     *     permissions = true
-     *     activities = true
+     *     usesPermission = true
+     *     activity = true
      *     sources = true
      *   }
      * }

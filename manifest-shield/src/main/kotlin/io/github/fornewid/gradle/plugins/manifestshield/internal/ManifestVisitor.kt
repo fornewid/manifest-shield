@@ -19,22 +19,22 @@ import org.w3c.dom.Element
 import org.w3c.dom.NodeList
 
 internal data class ManifestExtraction(
-    val sdk: ManifestSdk?,
-    val permissions: List<ManifestPermission>,
-    val permissionsSdk23: List<ManifestPermission>,
-    val permissionDeclarations: List<ManifestPermissionDeclaration>,
-    val features: List<ManifestFeature>,
+    val usesSdk: ManifestSdk?,
+    val usesPermission: List<ManifestPermission>,
+    val usesPermissionSdk23: List<ManifestPermission>,
+    val permission: List<ManifestPermissionDeclaration>,
+    val usesFeature: List<ManifestFeature>,
     val supportsScreens: ManifestSupportsScreens?,
     val compatibleScreens: List<String>,
     val usesConfiguration: ManifestUsesConfiguration?,
     val supportsGlTextures: List<ManifestFeature>,
     val queries: ManifestQuery?,
-    val activities: List<ManifestComponent>,
-    val activityAliases: List<ManifestComponent>,
+    val activity: List<ManifestComponent>,
+    val activityAlias: List<ManifestComponent>,
     val metaData: List<ManifestMetaData>,
-    val services: List<ManifestComponent>,
-    val receivers: List<ManifestComponent>,
-    val providers: List<ManifestComponent>,
+    val service: List<ManifestComponent>,
+    val receiver: List<ManifestComponent>,
+    val provider: List<ManifestComponent>,
     val usesLibraries: List<ManifestLibrary>,
     val usesNativeLibraries: List<ManifestLibrary>,
     val profileable: ManifestProfileable?,
@@ -62,9 +62,9 @@ internal object ManifestVisitor {
             }
 
         val permissions = root.parsePermissions("uses-permission")
-        val permissionsSdk23 = root.parsePermissions("uses-permission-sdk-23")
+        val usesPermissionSdk23 = root.parsePermissions("uses-permission-sdk-23")
 
-        val permissionDeclarations = root.getElementsByTagName("permission")
+        val permission = root.getElementsByTagName("permission")
             .toElementList()
             .mapNotNull { node ->
                 val name = node.attrNS("name") ?: return@mapNotNull null
@@ -130,7 +130,7 @@ internal object ManifestVisitor {
         val application = if (applicationNodes.length > 0) applicationNodes.item(0) as Element else null
 
         val activities = application?.parseComponents(ComponentType.ACTIVITY).orEmpty()
-        val activityAliases = application?.parseComponents(ComponentType.ACTIVITY_ALIAS).orEmpty()
+        val activityAlias = application?.parseComponents(ComponentType.ACTIVITY_ALIAS).orEmpty()
         val services = application?.parseComponents(ComponentType.SERVICE).orEmpty()
         val receivers = application?.parseComponents(ComponentType.RECEIVER).orEmpty()
         val providers = application?.parseProviders().orEmpty()
@@ -159,22 +159,22 @@ internal object ManifestVisitor {
         val startupInitializers = application?.parseStartupInitializers().orEmpty()
 
         return ManifestExtraction(
-            sdk = sdk,
-            permissions = permissions,
-            permissionsSdk23 = permissionsSdk23,
-            permissionDeclarations = permissionDeclarations,
-            features = features,
+            usesSdk = sdk,
+            usesPermission = permissions,
+            usesPermissionSdk23 = usesPermissionSdk23,
+            permission = permission,
+            usesFeature = features,
             supportsScreens = supportsScreens,
             compatibleScreens = compatibleScreens,
             usesConfiguration = usesConfiguration,
             supportsGlTextures = supportsGlTextures,
             queries = queries,
-            activities = activities,
-            activityAliases = activityAliases,
+            activity = activities,
+            activityAlias = activityAlias,
             metaData = metaData,
-            services = services,
-            receivers = receivers,
-            providers = providers,
+            service = services,
+            receiver = receivers,
+            provider = providers,
             usesLibraries = usesLibraries,
             usesNativeLibraries = usesNativeLibraries,
             profileable = profileable,
@@ -228,7 +228,7 @@ internal object ManifestVisitor {
                         else -> null
                     },
                     targetActivity = targetActivity,
-                    intentFilters = node.parseIntentFilters(),
+                    intentFilter = node.parseIntentFilters(),
                 )
             }
             .distinct().sortedBy { it.name }

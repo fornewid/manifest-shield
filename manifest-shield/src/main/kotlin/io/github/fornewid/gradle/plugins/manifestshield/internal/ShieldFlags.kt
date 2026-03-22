@@ -5,86 +5,45 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 
 /**
- * Common guard flag properties shared between ManifestShieldListTask and ManifestTreeDiffTask.
+ * Common shield flag properties shared between ManifestShieldListTask and ManifestSourcesDiffTask.
  */
 internal interface ShieldFlags {
 
-    @get:Input
-    val guardSdk: Property<Boolean>
-
-    @get:Input
-    val guardPermissions: Property<Boolean>
-
-    @get:Input
-    val guardPermissionsSdk23: Property<Boolean>
-
-    @get:Input
-    val guardPermissionDeclarations: Property<Boolean>
-
-    @get:Input
-    val guardActivities: Property<Boolean>
-
-    @get:Input
-    val guardActivityAliases: Property<Boolean>
-
-    @get:Input
-    val guardServices: Property<Boolean>
-
-    @get:Input
-    val guardReceivers: Property<Boolean>
-
-    @get:Input
-    val guardProviders: Property<Boolean>
-
-    @get:Input
-    val guardFeatures: Property<Boolean>
-
-    @get:Input
-    val guardIntentFilters: Property<Boolean>
-
-    @get:Input
-    val guardStartup: Property<Boolean>
-
-    @get:Input
-    val guardSupportsScreens: Property<Boolean>
-
-    @get:Input
-    val guardCompatibleScreens: Property<Boolean>
-
-    @get:Input
-    val guardUsesConfiguration: Property<Boolean>
-
-    @get:Input
-    val guardSupportsGlTexture: Property<Boolean>
-
-    @get:Input
-    val guardQueries: Property<Boolean>
-
-    @get:Input
-    val guardMetaData: Property<Boolean>
-
-    @get:Input
-    val guardUsesLibrary: Property<Boolean>
-
-    @get:Input
-    val guardUsesNativeLibrary: Property<Boolean>
-
-    @get:Input
-    val guardProfileable: Property<Boolean>
+    @get:Input val guardUsesSdk: Property<Boolean>
+    @get:Input val guardUsesPermission: Property<Boolean>
+    @get:Input val guardUsesPermissionSdk23: Property<Boolean>
+    @get:Input val guardPermission: Property<Boolean>
+    @get:Input val guardActivity: Property<Boolean>
+    @get:Input val guardActivityAlias: Property<Boolean>
+    @get:Input val guardService: Property<Boolean>
+    @get:Input val guardReceiver: Property<Boolean>
+    @get:Input val guardProvider: Property<Boolean>
+    @get:Input val guardUsesFeature: Property<Boolean>
+    @get:Input val guardIntentFilter: Property<Boolean>
+    @get:Input val guardStartup: Property<Boolean>
+    @get:Input val guardSupportsScreens: Property<Boolean>
+    @get:Input val guardCompatibleScreens: Property<Boolean>
+    @get:Input val guardUsesConfiguration: Property<Boolean>
+    @get:Input val guardSupportsGlTexture: Property<Boolean>
+    @get:Input val guardQueries: Property<Boolean>
+    @get:Input val guardMetaData: Property<Boolean>
+    @get:Input val guardUsesLibrary: Property<Boolean>
+    @get:Input val guardUsesNativeLibrary: Property<Boolean>
+    @get:Input val guardProfileable: Property<Boolean>
 }
 
 internal fun ShieldFlags.applyConfig(config: ManifestShieldConfiguration) {
-    guardSdk.set(config.sdk)
-    guardPermissions.set(config.permissions)
-    guardPermissionsSdk23.set(config.permissionsSdk23)
-    guardPermissionDeclarations.set(config.permissionDeclarations)
-    guardActivities.set(config.activities)
-    guardActivityAliases.set(config.activityAliases)
-    guardServices.set(config.services)
-    guardReceivers.set(config.receivers)
-    guardProviders.set(config.providers)
-    guardFeatures.set(config.features)
-    guardIntentFilters.set(config.intentFilters)
+    guardUsesSdk.set(config.usesSdk)
+    guardUsesPermission.set(config.usesPermission)
+    guardUsesPermissionSdk23.set(config.usesPermissionSdk23)
+    guardPermission.set(config.permission)
+    guardActivity.set(config.activity)
+    guardActivityAlias.set(config.activityAlias)
+    guardService.set(config.service)
+    guardReceiver.set(config.receiver)
+    guardProvider.set(config.provider)
+    guardUsesFeature.set(config.usesFeature)
+    guardIntentFilter.set(config.intentFilter)
     guardStartup.set(config.startup)
     guardSupportsScreens.set(config.supportsScreens)
     guardCompatibleScreens.set(config.compatibleScreens)

@@ -129,7 +129,7 @@ internal object SourcesContentBuilder {
         val applicationLevel = listOf("activity", "activity-alias", "meta-data", "service", "receiver",
             "profileable", "provider", "uses-library", "uses-native-library", "androidx.startup")
 
-        val guardIntentFilters = flags.intentFilters
+        val guardIntentFilter = flags.intentFilter
 
         // Group: source → tag → list of lines
         val sourceTagEntries = mutableMapOf<String, MutableMap<String, MutableList<String>>>()
@@ -144,8 +144,8 @@ internal object SourcesContentBuilder {
                         .getOrPut(source) { mutableMapOf() }
                         .getOrPut(tag) { mutableListOf() }
                     lines.add(line)
-                    if (isComponent && guardIntentFilters && entry is ManifestComponent && entry.intentFilters.isNotEmpty()) {
-                        for (filter in entry.intentFilters) {
+                    if (isComponent && guardIntentFilter && entry is ManifestComponent && entry.intentFilter.isNotEmpty()) {
+                        for (filter in entry.intentFilter) {
                             lines.add("  intent-filter:")
                             filter.actions.forEach { lines.add("    action: $it") }
                             filter.categories.forEach { lines.add("    category: $it") }
@@ -156,17 +156,17 @@ internal object SourcesContentBuilder {
             }
         }
 
-        if (flags.features && manifest.features.isNotEmpty()) addEntries("uses-feature", "uses-feature", manifest.features)
-        if (flags.permissions && manifest.permissions.isNotEmpty()) addEntries("uses-permission", "uses-permission", manifest.permissions)
-        if (flags.permissionsSdk23 && manifest.permissionsSdk23.isNotEmpty()) addEntries("uses-permission-sdk-23", "uses-permission-sdk-23", manifest.permissionsSdk23)
-        if (flags.permissionDeclarations && manifest.permissionDeclarations.isNotEmpty()) addEntries("permission", "permission", manifest.permissionDeclarations)
+        if (flags.usesFeature && manifest.usesFeature.isNotEmpty()) addEntries("uses-feature", "uses-feature", manifest.usesFeature)
+        if (flags.usesPermission && manifest.usesPermission.isNotEmpty()) addEntries("uses-permission", "uses-permission", manifest.usesPermission)
+        if (flags.usesPermissionSdk23 && manifest.usesPermissionSdk23.isNotEmpty()) addEntries("uses-permission-sdk-23", "uses-permission-sdk-23", manifest.usesPermissionSdk23)
+        if (flags.permission && manifest.permission.isNotEmpty()) addEntries("permission", "permission", manifest.permission)
         if (flags.supportsGlTexture && manifest.supportsGlTextures.isNotEmpty()) addEntries("supports-gl-texture", "supports-gl-texture", manifest.supportsGlTextures)
-        if (flags.activities && manifest.activities.isNotEmpty()) addEntries("activity", "activity", manifest.activities, isComponent = true)
-        if (flags.activityAliases && manifest.activityAliases.isNotEmpty()) addEntries("activity-alias", "activity-alias", manifest.activityAliases, isComponent = true)
+        if (flags.activity && manifest.activity.isNotEmpty()) addEntries("activity", "activity", manifest.activity, isComponent = true)
+        if (flags.activityAlias && manifest.activityAlias.isNotEmpty()) addEntries("activity-alias", "activity-alias", manifest.activityAlias, isComponent = true)
         if (flags.metaData && manifest.metaData.isNotEmpty()) addEntries("meta-data", "meta-data", manifest.metaData)
-        if (flags.services && manifest.services.isNotEmpty()) addEntries("service", "service", manifest.services, isComponent = true)
-        if (flags.receivers && manifest.receivers.isNotEmpty()) addEntries("receiver", "receiver", manifest.receivers, isComponent = true)
-        if (flags.providers && manifest.providers.isNotEmpty()) addEntries("provider", "provider", manifest.providers, isComponent = true)
+        if (flags.service && manifest.service.isNotEmpty()) addEntries("service", "service", manifest.service, isComponent = true)
+        if (flags.receiver && manifest.receiver.isNotEmpty()) addEntries("receiver", "receiver", manifest.receiver, isComponent = true)
+        if (flags.provider && manifest.provider.isNotEmpty()) addEntries("provider", "provider", manifest.provider, isComponent = true)
         if (flags.usesLibrary && manifest.usesLibraries.isNotEmpty()) addEntries("uses-library", "uses-library", manifest.usesLibraries)
         if (flags.usesNativeLibrary && manifest.usesNativeLibraries.isNotEmpty()) addEntries("uses-native-library", "uses-native-library", manifest.usesNativeLibraries)
 
@@ -204,8 +204,8 @@ internal object SourcesContentBuilder {
         }
 
         // uses-sdk is always from the current project module
-        val sdk = manifest.sdk
-        if (flags.sdk && sdk != null) {
+        val sdk = manifest.usesSdk
+        if (flags.usesSdk && sdk != null) {
             sourceTagEntries.getOrPut(projectPath) { mutableMapOf() }
         }
 
@@ -221,7 +221,7 @@ internal object SourcesContentBuilder {
                 val tagMap = sourceTagEntries[source] ?: continue
 
                 // uses-sdk is per-source "app" only (it comes from the build config)
-                val hasSdk = flags.sdk && source == projectPath && manifest.sdk != null
+                val hasSdk = flags.usesSdk && source == projectPath && manifest.usesSdk != null
 
                 val manifestTags = mutableListOf<String>()
                 if (hasSdk) manifestTags.add("uses-sdk")
@@ -235,8 +235,8 @@ internal object SourcesContentBuilder {
                     for ((i, tag) in manifestTags.withIndex()) {
                         if (tag == "uses-sdk") {
                             appendLine("uses-sdk:")
-                            manifest.sdk?.minSdkVersion?.let { appendLine("  minSdkVersion=$it") }
-                            manifest.sdk?.targetSdkVersion?.let { appendLine("  targetSdkVersion=$it") }
+                            manifest.usesSdk?.minSdkVersion?.let { appendLine("  minSdkVersion=$it") }
+                            manifest.usesSdk?.targetSdkVersion?.let { appendLine("  targetSdkVersion=$it") }
                         } else {
                             appendLine("$tag:")
                             tagMap[tag]?.forEach { appendLine("  $it") }

@@ -135,12 +135,12 @@ internal class AndroidProject(
         val DEFAULT_PLUGIN_CONFIG = """
             manifestShield {
                 configuration("release") {
-                    permissions = true
-                    activities = true
-                    services = true
-                    receivers = true
-                    providers = true
-                    features = true
+                    usesPermission = true
+                    activity = true
+                    service = true
+                    receiver = true
+                    provider = true
+                    usesFeature = true
                 }
             }
         """.trimIndent()

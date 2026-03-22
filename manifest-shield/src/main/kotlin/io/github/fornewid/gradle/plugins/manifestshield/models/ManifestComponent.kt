@@ -6,7 +6,7 @@ internal data class ManifestComponent(
     val exported: Boolean?,
     val targetActivity: String? = null,
     val authorities: String? = null,
-    val intentFilters: List<IntentFilterInfo> = emptyList(),
+    val intentFilter: List<IntentFilterInfo> = emptyList(),
 ) : ManifestEntry {
 
     override fun toBaselineString(): String = buildString {

@@ -55,17 +55,17 @@ internal abstract class ManifestSourcesDiffTask : DefaultTask(), ShieldFlags {
     @get:Input
     abstract val shouldBaseline: Property<Boolean>
 
-    abstract override val guardSdk: Property<Boolean>
-    abstract override val guardPermissions: Property<Boolean>
-    abstract override val guardPermissionsSdk23: Property<Boolean>
-    abstract override val guardPermissionDeclarations: Property<Boolean>
-    abstract override val guardActivities: Property<Boolean>
-    abstract override val guardActivityAliases: Property<Boolean>
-    abstract override val guardServices: Property<Boolean>
-    abstract override val guardReceivers: Property<Boolean>
-    abstract override val guardProviders: Property<Boolean>
-    abstract override val guardFeatures: Property<Boolean>
-    abstract override val guardIntentFilters: Property<Boolean>
+    abstract override val guardUsesSdk: Property<Boolean>
+    abstract override val guardUsesPermission: Property<Boolean>
+    abstract override val guardUsesPermissionSdk23: Property<Boolean>
+    abstract override val guardPermission: Property<Boolean>
+    abstract override val guardActivity: Property<Boolean>
+    abstract override val guardActivityAlias: Property<Boolean>
+    abstract override val guardService: Property<Boolean>
+    abstract override val guardReceiver: Property<Boolean>
+    abstract override val guardProvider: Property<Boolean>
+    abstract override val guardUsesFeature: Property<Boolean>
+    abstract override val guardIntentFilter: Property<Boolean>
     abstract override val guardStartup: Property<Boolean>
     abstract override val guardSupportsScreens: Property<Boolean>
     abstract override val guardCompatibleScreens: Property<Boolean>

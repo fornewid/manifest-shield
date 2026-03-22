@@ -1,55 +1,55 @@
 public class io/github/fornewid/gradle/plugins/manifestshield/ManifestShieldConfiguration : org/gradle/api/Named {
 	public fun <init> (Ljava/lang/String;)V
-	public final fun getActivities ()Z
-	public final fun getActivityAliases ()Z
+	public final fun getActivity ()Z
+	public final fun getActivityAlias ()Z
 	public final fun getAllowedFilter ()Lkotlin/jvm/functions/Function1;
 	public final fun getBaselineMap ()Lkotlin/jvm/functions/Function1;
 	public final fun getCompatibleScreens ()Z
 	public final fun getConfigurationName ()Ljava/lang/String;
-	public final fun getFeatures ()Z
-	public final fun getIntentFilters ()Z
+	public final fun getIntentFilter ()Z
 	public final fun getMetaData ()Z
 	public fun getName ()Ljava/lang/String;
-	public final fun getPermissionDeclarations ()Z
-	public final fun getPermissions ()Z
-	public final fun getPermissionsSdk23 ()Z
+	public final fun getPermission ()Z
 	public final fun getProfileable ()Z
-	public final fun getProviders ()Z
+	public final fun getProvider ()Z
 	public final fun getQueries ()Z
-	public final fun getReceivers ()Z
-	public final fun getSdk ()Z
-	public final fun getServices ()Z
+	public final fun getReceiver ()Z
+	public final fun getService ()Z
 	public final fun getSources ()Z
 	public final fun getStartup ()Z
 	public final fun getSupportsGlTexture ()Z
 	public final fun getSupportsScreens ()Z
 	public final fun getUsesConfiguration ()Z
+	public final fun getUsesFeature ()Z
 	public final fun getUsesLibrary ()Z
 	public final fun getUsesNativeLibrary ()Z
-	public final fun setActivities (Z)V
-	public final fun setActivityAliases (Z)V
+	public final fun getUsesPermission ()Z
+	public final fun getUsesPermissionSdk23 ()Z
+	public final fun getUsesSdk ()Z
+	public final fun setActivity (Z)V
+	public final fun setActivityAlias (Z)V
 	public final fun setAllowedFilter (Lkotlin/jvm/functions/Function1;)V
 	public final fun setBaselineMap (Lkotlin/jvm/functions/Function1;)V
 	public final fun setCompatibleScreens (Z)V
-	public final fun setFeatures (Z)V
-	public final fun setIntentFilters (Z)V
+	public final fun setIntentFilter (Z)V
 	public final fun setMetaData (Z)V
-	public final fun setPermissionDeclarations (Z)V
-	public final fun setPermissions (Z)V
-	public final fun setPermissionsSdk23 (Z)V
+	public final fun setPermission (Z)V
 	public final fun setProfileable (Z)V
-	public final fun setProviders (Z)V
+	public final fun setProvider (Z)V
 	public final fun setQueries (Z)V
-	public final fun setReceivers (Z)V
-	public final fun setSdk (Z)V
-	public final fun setServices (Z)V
+	public final fun setReceiver (Z)V
+	public final fun setService (Z)V
 	public final fun setSources (Z)V
 	public final fun setStartup (Z)V
 	public final fun setSupportsGlTexture (Z)V
 	public final fun setSupportsScreens (Z)V
 	public final fun setUsesConfiguration (Z)V
+	public final fun setUsesFeature (Z)V
 	public final fun setUsesLibrary (Z)V
 	public final fun setUsesNativeLibrary (Z)V
+	public final fun setUsesPermission (Z)V
+	public final fun setUsesPermissionSdk23 (Z)V
+	public final fun setUsesSdk (Z)V
 }
 
 public final class io/github/fornewid/gradle/plugins/manifestshield/ManifestShieldPlugin : org/gradle/api/Plugin {

@@ -23,11 +23,11 @@ internal class ManifestVisitorEdgeCaseTest {
         }
         val result = ManifestVisitor.parse(manifest)
 
-        assertThat(result.permissions).hasSize(1)
-        assertThat(result.activities).isEmpty()
-        assertThat(result.services).isEmpty()
-        assertThat(result.receivers).isEmpty()
-        assertThat(result.providers).isEmpty()
+        assertThat(result.usesPermission).hasSize(1)
+        assertThat(result.activity).isEmpty()
+        assertThat(result.service).isEmpty()
+        assertThat(result.receiver).isEmpty()
+        assertThat(result.provider).isEmpty()
     }
 
     @Test
@@ -42,12 +42,12 @@ internal class ManifestVisitorEdgeCaseTest {
         }
         val result = ManifestVisitor.parse(manifest)
 
-        assertThat(result.permissions).isEmpty()
-        assertThat(result.activities).isEmpty()
-        assertThat(result.services).isEmpty()
-        assertThat(result.receivers).isEmpty()
-        assertThat(result.providers).isEmpty()
-        assertThat(result.features).isEmpty()
+        assertThat(result.usesPermission).isEmpty()
+        assertThat(result.activity).isEmpty()
+        assertThat(result.service).isEmpty()
+        assertThat(result.receiver).isEmpty()
+        assertThat(result.provider).isEmpty()
+        assertThat(result.usesFeature).isEmpty()
     }
 
     @Test
@@ -63,8 +63,8 @@ internal class ManifestVisitorEdgeCaseTest {
         }
         val result = ManifestVisitor.parse(manifest)
 
-        assertThat(result.activities).isEmpty()
-        assertThat(result.services).isEmpty()
+        assertThat(result.activity).isEmpty()
+        assertThat(result.service).isEmpty()
     }
 
     @Test
@@ -81,7 +81,7 @@ internal class ManifestVisitorEdgeCaseTest {
         }
         val result = ManifestVisitor.parse(manifest)
 
-        assertThat(result.permissions).hasSize(1)
+        assertThat(result.usesPermission).hasSize(1)
     }
 
     @Test
@@ -101,9 +101,9 @@ internal class ManifestVisitorEdgeCaseTest {
         }
         val result = ManifestVisitor.parse(manifest)
 
-        assertThat(result.permissions).isEmpty()
-        assertThat(result.features).isEmpty()
-        assertThat(result.activities).isEmpty()
+        assertThat(result.usesPermission).isEmpty()
+        assertThat(result.usesFeature).isEmpty()
+        assertThat(result.activity).isEmpty()
     }
 
     @Test
@@ -119,8 +119,8 @@ internal class ManifestVisitorEdgeCaseTest {
         }
         val result = ManifestVisitor.parse(manifest)
 
-        assertThat(result.features).hasSize(1)
-        assertThat(result.features[0].required).isTrue()
-        assertThat(result.features[0].toBaselineString()).isEqualTo("android.hardware.camera (required)")
+        assertThat(result.usesFeature).hasSize(1)
+        assertThat(result.usesFeature[0].required).isTrue()
+        assertThat(result.usesFeature[0].toBaselineString()).isEqualTo("android.hardware.camera (required)")
     }
 }
