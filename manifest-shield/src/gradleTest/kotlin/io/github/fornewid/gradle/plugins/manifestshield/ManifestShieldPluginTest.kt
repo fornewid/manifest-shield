@@ -8,6 +8,143 @@ import org.junit.jupiter.api.Test
 
 internal class ManifestShieldPluginTest {
 
+    companion object {
+        private val MANIFEST_WITH_SERVICE = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <service android:name=".MyService" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_RECEIVER = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <receiver android:name=".MyReceiver" android:exported="false" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_PROVIDER = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <provider
+                        android:name=".MyProvider"
+                        android:authorities="io.github.fornewid.test.provider"
+                        android:exported="false" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_USES_FEATURE = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-feature android:name="android.hardware.camera" android:required="true" />
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_STARTUP = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <provider
+                        android:name="androidx.startup.InitializationProvider"
+                        android:authorities="io.github.fornewid.test.androidx-startup"
+                        android:exported="false">
+                        <meta-data
+                            android:name="com.example.MyInitializer"
+                            android:value="androidx.startup" />
+                    </provider>
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_PERMISSION = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <permission android:name="com.example.CUSTOM" android:protectionLevel="signature" />
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_ACTIVITY_ALIAS = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <activity-alias
+                        android:name=".Shortcut"
+                        android:targetActivity=".MainActivity"
+                        android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_USES_PERMISSION_SDK_23 = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-permission-sdk-23 android:name="android.permission.ACCESS_FINE_LOCATION" />
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_META_DATA = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <meta-data android:name="com.example.KEY" android:value="val" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_USES_LIBRARY = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <uses-library android:name="org.apache.http.legacy" android:required="false" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_PROFILEABLE = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <profileable android:shell="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_QUERIES = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <queries>
+                    <package android:name="com.example.foo" />
+                </queries>
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+    }
+
     @Test
     fun `baseline task creates merged baseline file`() {
         AndroidProject().use { project ->
@@ -182,11 +319,22 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
-    fun `baseline excludes sdk when sdk is disabled`() {
+    fun `baseline excludes uses-sdk by default`() {
+        AndroidProject().use { project ->
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("uses-sdk:")
+        }
+    }
+
+    @Test
+    fun `baseline includes uses-sdk when enabled`() {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
-                    usesSdk = false
+                    usesSdk = true
                 }
             }
         """.trimIndent()
@@ -196,8 +344,8 @@ internal class ManifestShieldPluginTest {
 
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
-            assertThat(baseline).doesNotContain("uses-sdk:")
-            assertThat(baseline).contains("uses-permission:")
+            assertThat(baseline).contains("uses-sdk:")
+            assertThat(baseline).contains("minSdkVersion=")
         }
     }
 
@@ -235,21 +383,393 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
+    fun `baseline excludes meta-data by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_META_DATA)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("meta-data:")
+        }
+    }
+
+    @Test
+    fun `baseline includes meta-data when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    metaData = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_META_DATA)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("meta-data:")
+            assertThat(baseline).contains("com.example.KEY")
+        }
+    }
+
+    @Test
+    fun `baseline excludes uses-library by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_USES_LIBRARY)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("uses-library:")
+        }
+    }
+
+    @Test
+    fun `baseline includes uses-library when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    usesLibrary = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_USES_LIBRARY)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("uses-library:")
+            assertThat(baseline).contains("org.apache.http.legacy")
+        }
+    }
+
+    @Test
+    fun `baseline excludes profileable by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_PROFILEABLE)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("profileable:")
+        }
+    }
+
+    @Test
+    fun `baseline includes profileable when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    profileable = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_PROFILEABLE)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("profileable:")
+        }
+    }
+
+    @Test
+    fun `baseline excludes permission by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_PERMISSION)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("permission:")
+        }
+    }
+
+    @Test
+    fun `baseline includes permission when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    permission = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_PERMISSION)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("permission:")
+            assertThat(baseline).contains("com.example.CUSTOM")
+        }
+    }
+
+    @Test
+    fun `baseline excludes activity-alias by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_ACTIVITY_ALIAS)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("activity-alias:")
+        }
+    }
+
+    @Test
+    fun `baseline includes activity-alias when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    activityAlias = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_ACTIVITY_ALIAS)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("activity-alias:")
+            assertThat(baseline).contains("Shortcut")
+        }
+    }
+
+    @Test
+    fun `baseline excludes uses-permission-sdk-23 by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_USES_PERMISSION_SDK_23)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("uses-permission-sdk-23:")
+        }
+    }
+
+    @Test
+    fun `baseline includes uses-permission-sdk-23 when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    usesPermissionSdk23 = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_USES_PERMISSION_SDK_23)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("uses-permission-sdk-23:")
+            assertThat(baseline).contains("android.permission.ACCESS_FINE_LOCATION")
+        }
+    }
+
+    @Test
+    fun `baseline includes startup by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_STARTUP)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("androidx.startup:")
+            assertThat(baseline).contains("MyInitializer")
+        }
+    }
+
+    @Test
+    fun `baseline excludes startup when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    startup = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_STARTUP)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("androidx.startup:")
+        }
+    }
+
+    @Test
+    fun `baseline includes uses-feature by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_USES_FEATURE)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("uses-feature:")
+            assertThat(baseline).contains("android.hardware.camera")
+        }
+    }
+
+    @Test
+    fun `baseline excludes uses-feature when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    usesFeature = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_USES_FEATURE)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("uses-feature:")
+        }
+    }
+
+    @Test
+    fun `baseline includes service by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_SERVICE)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("service:")
+            assertThat(baseline).contains("MyService")
+        }
+    }
+
+    @Test
+    fun `baseline excludes service when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    service = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_SERVICE)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("service:")
+        }
+    }
+
+    @Test
+    fun `baseline includes receiver by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_RECEIVER)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("receiver:")
+            assertThat(baseline).contains("MyReceiver")
+        }
+    }
+
+    @Test
+    fun `baseline excludes receiver when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    receiver = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_RECEIVER)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("receiver:")
+        }
+    }
+
+    @Test
+    fun `baseline includes provider by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_PROVIDER)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("provider:")
+            assertThat(baseline).contains("MyProvider")
+        }
+    }
+
+    @Test
+    fun `baseline excludes provider when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    provider = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_PROVIDER)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("provider:")
+        }
+    }
+
+    @Test
     fun `baseline includes queries by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <queries>
-                        <package android:name="com.example.foo" />
-                    </queries>
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_QUERIES)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -271,19 +791,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <queries>
-                        <package android:name="com.example.foo" />
-                    </queries>
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_QUERIES)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -324,6 +832,28 @@ internal class ManifestShieldPluginTest {
             // intent-filter is excluded by default (intentFilter = false)
             assertThat(txt).doesNotContain("intent-filter:")
             assertThat(sources).doesNotContain("intent-filter:")
+        }
+    }
+
+    @Test
+    fun `baselineMap transforms entries in baseline`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    usesPermission = true
+                    baselineMap = { entry ->
+                        entry.contains("INTERNET") ? null : entry
+                    }
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("INTERNET")
         }
     }
 
