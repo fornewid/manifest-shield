@@ -34,7 +34,7 @@ jobs:
         id: version
         run: |
           if [ "${{ inputs.use_current_version }}" = "true" ]; then
-            CURRENT=$(grep 'VERSION_NAME=' manifest-guard/gradle.properties | cut -d'=' -f2)
+            CURRENT=$(grep 'VERSION_NAME=' manifest-shield/gradle.properties | cut -d'=' -f2)
             VERSION="${CURRENT%-SNAPSHOT}"
           else
             VERSION="${{ inputs.custom_version }}"
@@ -62,7 +62,7 @@ jobs:
       - name: Update version in gradle.properties
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          sed -i "s/VERSION_NAME=.*/VERSION_NAME=$VERSION/" manifest-guard/gradle.properties
+          sed -i "s/VERSION_NAME=.*/VERSION_NAME=$VERSION/" manifest-shield/gradle.properties
 
       - name: Create release PR
         uses: peter-evans/create-pull-request@v6

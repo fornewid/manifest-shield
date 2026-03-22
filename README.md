@@ -1,6 +1,6 @@
-# manifest-guard
+# manifest-shield
 
-A Gradle plugin that guards against unintentional `AndroidManifest.xml` changes.
+A Gradle plugin that shields against unintentional `AndroidManifest.xml` changes.
 
 ## Features
 
@@ -15,10 +15,10 @@ A Gradle plugin that guards against unintentional `AndroidManifest.xml` changes.
 // build.gradle.kts
 plugins {
     id("com.android.application")
-    id("io.github.fornewid.manifest-guard")
+    id("io.github.fornewid.manifest-shield")
 }
 
-manifestGuard {
+manifestShield {
     configuration("release") {
         // These are enabled by default
         sdk = true
@@ -43,18 +43,18 @@ manifestGuard {
 
 ```bash
 # Save current manifest as baseline
-./gradlew manifestGuardBaseline
+./gradlew manifestShieldBaseline
 
 # Check for manifest changes
-./gradlew manifestGuard
+./gradlew manifestShield
 ```
 
 ## Baseline Files
 
-Baseline files are stored in the `manifestGuard/` directory (configurable via `baselineDir`):
+Baseline files are stored in the `manifestShield/` directory (configurable via `baselineDir`):
 
 ```
-manifestGuard/
+manifestShield/
 ├── releaseAndroidManifest.txt
 └── releaseAndroidManifest.sources.txt   # when tree=true
 ```
@@ -175,28 +175,28 @@ Empty categories are omitted from the output.
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `baselineDir` | `"manifestGuard"` | Directory name for baseline files |
-| `sdk` | **`true`** | Guard `<uses-sdk>` |
-| `permissions` | **`true`** | Guard `<uses-permission>` |
-| `permissionDeclarations` | **`true`** | Guard `<permission>` |
-| `features` | **`true`** | Guard `<uses-feature>` |
-| `activities` | **`true`** | Guard `<activity>` |
-| `activityAliases` | **`true`** | Guard `<activity-alias>` |
-| `services` | **`true`** | Guard `<service>` |
-| `receivers` | **`true`** | Guard `<receiver>` |
-| `providers` | **`true`** | Guard `<provider>` |
-| `intentFilters` | **`true`** | Guard `<intent-filter>` on components |
-| `startup` | **`true`** | Guard `androidx.startup` initializers |
-| `permissionsSdk23` | `false` | Guard `<uses-permission-sdk-23>` |
-| `supportsScreens` | `false` | Guard `<supports-screens>` |
-| `compatibleScreens` | `false` | Guard `<compatible-screens>` |
-| `usesConfiguration` | `false` | Guard `<uses-configuration>` |
-| `supportsGlTexture` | `false` | Guard `<supports-gl-texture>` |
-| `queries` | `false` | Guard `<queries>` |
-| `metaData` | `false` | Guard `<meta-data>` (non-primitive values shown as `(REDACTED)`) |
-| `usesLibrary` | `false` | Guard `<uses-library>` |
-| `usesNativeLibrary` | `false` | Guard `<uses-native-library>` |
-| `profileable` | `false` | Guard `<profileable>` |
+| `baselineDir` | `"manifestShield"` | Directory name for baseline files |
+| `sdk` | **`true`** | Shield `<uses-sdk>` |
+| `permissions` | **`true`** | Shield `<uses-permission>` |
+| `permissionDeclarations` | **`true`** | Shield `<permission>` |
+| `features` | **`true`** | Shield `<uses-feature>` |
+| `activities` | **`true`** | Shield `<activity>` |
+| `activityAliases` | **`true`** | Shield `<activity-alias>` |
+| `services` | **`true`** | Shield `<service>` |
+| `receivers` | **`true`** | Shield `<receiver>` |
+| `providers` | **`true`** | Shield `<provider>` |
+| `intentFilters` | **`true`** | Shield `<intent-filter>` on components |
+| `startup` | **`true`** | Shield `androidx.startup` initializers |
+| `permissionsSdk23` | `false` | Shield `<uses-permission-sdk-23>` |
+| `supportsScreens` | `false` | Shield `<supports-screens>` |
+| `compatibleScreens` | `false` | Shield `<compatible-screens>` |
+| `usesConfiguration` | `false` | Shield `<uses-configuration>` |
+| `supportsGlTexture` | `false` | Shield `<supports-gl-texture>` |
+| `queries` | `false` | Shield `<queries>` |
+| `metaData` | `false` | Shield `<meta-data>` (non-primitive values shown as `(REDACTED)`) |
+| `usesLibrary` | `false` | Shield `<uses-library>` |
+| `usesNativeLibrary` | `false` | Shield `<uses-native-library>` |
+| `profileable` | `false` | Shield `<profileable>` |
 | `sources` | `false` | Enable source-attributed format grouped by library/module |
 | `allowedFilter` | `{ true }` | Filter to allow/disallow entries |
 | `baselineMap` | `{ it }` | Transform entries in baseline |

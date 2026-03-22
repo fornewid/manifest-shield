@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.fornewid.manifest.guard.sample.module1"
+    namespace = "io.github.fornewid.manifest.shield.sample.module1"
     compileSdk = 35
     defaultConfig {
         minSdk = 23

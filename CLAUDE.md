@@ -26,9 +26,9 @@ When new manifest elements are added, update the following files:
 1. `ManifestVisitor.kt` — Add parsing for the new element
 2. `ManifestExtraction` — Add new field
 3. `models/` — Create new model class
-4. `ManifestGuardConfiguration.kt` — Add new boolean flag
-5. `GuardFlags.kt` — Add flag to interface + `applyConfig` extension
-6. `ManifestGuardListTask.kt` — Add new category to output
+4. `ManifestShieldConfiguration.kt` — Add new boolean flag
+5. `ShieldFlags.kt` — Add flag to interface + `applyConfig` extension
+6. `ManifestShieldListTask.kt` — Add new category to output
 7. `SourcesContentBuilder.kt` — Add new category to source-grouped output
 8. `ManifestSourcesDiffTask.kt` — Add to `EnabledCategories`
 

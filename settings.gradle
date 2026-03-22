@@ -1,5 +1,5 @@
 pluginManagement {
-    includeBuild('manifest-guard')
+    includeBuild('manifest-shield')
     repositories {
         google()
         mavenCentral()
@@ -11,8 +11,8 @@ include ":sample:app"
 include ":sample:module1"
 include ":sample:module2"
 
-includeBuild('manifest-guard') {
+includeBuild('manifest-shield') {
     dependencySubstitution {
-        substitute module('io.github.fornewid.manifest-guard:manifest-guard') using project(':')
+        substitute module('io.github.fornewid.manifest-shield:manifest-shield') using project(':')
     }
 }

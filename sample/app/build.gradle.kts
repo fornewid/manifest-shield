@@ -1,10 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
-    id("io.github.fornewid.manifest-guard")
+    id("io.github.fornewid.manifest-shield")
 }
 
 android {
-    namespace = "io.github.fornewid.manifest.guard.sample.app"
+    namespace = "io.github.fornewid.manifest.shield.sample.app"
     compileSdk = 35
 
     defaultConfig {
@@ -18,7 +18,7 @@ dependencies {
     implementation(libs.androidx.activity)
 }
 
-manifestGuard {
+manifestShield {
     configuration("release") {
         sources = true
         metaData = true
