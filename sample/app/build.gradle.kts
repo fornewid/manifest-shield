@@ -21,6 +21,5 @@ dependencies {
 manifestShield {
     configuration("release") {
         sources = true
-        metaData = true
     }
 }
