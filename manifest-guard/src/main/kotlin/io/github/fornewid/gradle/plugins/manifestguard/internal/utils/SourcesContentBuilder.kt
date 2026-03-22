@@ -119,19 +119,13 @@ internal object SourcesContentBuilder {
         sourceMap: Map<String, String>,
         baselineMap: (String) -> String?,
         projectPath: String,
-        guardSdk: Boolean,
-        guardFeatures: Boolean,
-        guardPermissions: Boolean,
-        guardPermissionDeclarations: Boolean,
-        guardActivities: Boolean,
-        guardActivityAliases: Boolean,
-        guardServices: Boolean,
-        guardReceivers: Boolean,
-        guardProviders: Boolean,
-        guardIntentFilters: Boolean,
-        guardStartup: Boolean,
+        enabledFlags: Map<String, Boolean>,
     ): String {
-        val applicationLevel = listOf("activity", "activity-alias", "service", "receiver", "provider", "androidx.startup")
+        val applicationLevel = listOf("activity", "activity-alias", "meta-data", "service", "receiver",
+            "profileable", "provider", "uses-library", "uses-native-library", "androidx.startup")
+
+        fun flag(name: String): Boolean = enabledFlags[name] == true
+        val guardIntentFilters = flag("intentFilters")
 
         // Group: source → tag → list of lines
         val sourceTagEntries = mutableMapOf<String, MutableMap<String, MutableList<String>>>()
@@ -156,17 +150,22 @@ internal object SourcesContentBuilder {
             }
         }
 
-        if (guardFeatures && manifest.features.isNotEmpty()) addEntries("uses-feature", "uses-feature", manifest.features)
-        if (guardPermissions && manifest.permissions.isNotEmpty()) addEntries("uses-permission", "uses-permission", manifest.permissions)
-        if (guardPermissionDeclarations && manifest.permissionDeclarations.isNotEmpty()) addEntries("permission", "permission", manifest.permissionDeclarations)
-        if (guardActivities && manifest.activities.isNotEmpty()) addEntries("activity", "activity", manifest.activities, isComponent = true)
-        if (guardActivityAliases && manifest.activityAliases.isNotEmpty()) addEntries("activity-alias", "activity-alias", manifest.activityAliases, isComponent = true)
-        if (guardServices && manifest.services.isNotEmpty()) addEntries("service", "service", manifest.services, isComponent = true)
-        if (guardReceivers && manifest.receivers.isNotEmpty()) addEntries("receiver", "receiver", manifest.receivers, isComponent = true)
-        if (guardProviders && manifest.providers.isNotEmpty()) addEntries("provider", "provider", manifest.providers, isComponent = true)
+        if (flag("features") && manifest.features.isNotEmpty()) addEntries("uses-feature", "uses-feature", manifest.features)
+        if (flag("permissions") && manifest.permissions.isNotEmpty()) addEntries("uses-permission", "uses-permission", manifest.permissions)
+        if (flag("permissionsSdk23") && manifest.permissionsSdk23.isNotEmpty()) addEntries("uses-permission-sdk-23", "uses-permission-sdk-23", manifest.permissionsSdk23)
+        if (flag("permissionDeclarations") && manifest.permissionDeclarations.isNotEmpty()) addEntries("permission", "permission", manifest.permissionDeclarations)
+        if (flag("supportsGlTexture") && manifest.supportsGlTextures.isNotEmpty()) addEntries("supports-gl-texture", "supports-gl-texture", manifest.supportsGlTextures)
+        if (flag("activities") && manifest.activities.isNotEmpty()) addEntries("activity", "activity", manifest.activities, isComponent = true)
+        if (flag("activityAliases") && manifest.activityAliases.isNotEmpty()) addEntries("activity-alias", "activity-alias", manifest.activityAliases, isComponent = true)
+        if (flag("metaData") && manifest.metaData.isNotEmpty()) addEntries("meta-data", "meta-data", manifest.metaData)
+        if (flag("services") && manifest.services.isNotEmpty()) addEntries("service", "service", manifest.services, isComponent = true)
+        if (flag("receivers") && manifest.receivers.isNotEmpty()) addEntries("receiver", "receiver", manifest.receivers, isComponent = true)
+        if (flag("providers") && manifest.providers.isNotEmpty()) addEntries("provider", "provider", manifest.providers, isComponent = true)
+        if (flag("usesLibrary") && manifest.usesLibraries.isNotEmpty()) addEntries("uses-library", "uses-library", manifest.usesLibraries)
+        if (flag("usesNativeLibrary") && manifest.usesNativeLibraries.isNotEmpty()) addEntries("uses-native-library", "uses-native-library", manifest.usesNativeLibraries)
 
         // Startup initializers (attributed to the current project module)
-        if (guardStartup && manifest.startupInitializers.isNotEmpty()) {
+        if (flag("startup") && manifest.startupInitializers.isNotEmpty()) {
             sourceTagEntries
                 .getOrPut(projectPath) { mutableMapOf() }
                 .getOrPut("androidx.startup") { mutableListOf() }
@@ -175,7 +174,7 @@ internal object SourcesContentBuilder {
 
         // uses-sdk is always from the current project module
         val sdk = manifest.sdk
-        if (guardSdk && sdk != null) {
+        if (flag("sdk") && sdk != null) {
             sourceTagEntries.getOrPut(projectPath) { mutableMapOf() }
         }
 
@@ -191,11 +190,12 @@ internal object SourcesContentBuilder {
                 val tagMap = sourceTagEntries[source] ?: continue
 
                 // uses-sdk is per-source "app" only (it comes from the build config)
-                val hasSdk = guardSdk && source == projectPath && manifest.sdk != null
+                val hasSdk = flag("sdk") && source == projectPath && manifest.sdk != null
 
                 val manifestTags = mutableListOf<String>()
                 if (hasSdk) manifestTags.add("uses-sdk")
-                manifestTags.addAll(listOf("uses-feature", "uses-permission", "permission").filter { it in tagMap })
+                manifestTags.addAll(listOf("uses-feature", "uses-permission", "uses-permission-sdk-23", "permission",
+                    "supports-screens", "compatible-screens", "uses-configuration", "supports-gl-texture", "queries").filter { it in tagMap })
 
                 val appTags = applicationLevel.filter { it in tagMap }
 

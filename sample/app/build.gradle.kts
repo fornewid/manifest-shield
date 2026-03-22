@@ -20,12 +20,7 @@ dependencies {
 
 manifestGuard {
     configuration("release") {
-        permissions = true
-        activities = true
-        services = true
-        receivers = true
-        providers = true
-        features = true
         sources = true
+        metaData = true
     }
 }

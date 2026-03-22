@@ -1,5 +1,13 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.android.library)
+}
+
+android {
+    namespace = "io.github.fornewid.manifest.guard.sample.module1"
+    compileSdk = 35
+    defaultConfig {
+        minSdk = 23
+    }
 }
 
 dependencies {

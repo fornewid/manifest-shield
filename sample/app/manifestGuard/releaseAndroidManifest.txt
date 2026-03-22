@@ -3,7 +3,11 @@ uses-sdk:
   minSdkVersion=23
   targetSdkVersion=35
 
+uses-feature:
+  android.hardware.camera
+
 uses-permission:
+  android.permission.ACCESS_NETWORK_STATE
   android.permission.INTERNET
 
 <application>
@@ -12,3 +16,6 @@ activity:
     intent-filter:
       action: android.intent.action.MAIN
       category: android.intent.category.LAUNCHER
+
+meta-data:
+  com.example.FEATURE_FLAG (true)
