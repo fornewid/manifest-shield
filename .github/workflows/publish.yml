@@ -44,6 +44,15 @@ jobs:
           VERSION=$(grep 'VERSION_NAME=' manifest-shield/gradle.properties | cut -d'=' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Create git tag
+        if: ${{ !endsWith(steps.version.outputs.version, '-SNAPSHOT') }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+
       - name: Bump to next SNAPSHOT version
         if: ${{ !endsWith(steps.version.outputs.version, '-SNAPSHOT') }}
         run: |
