@@ -56,14 +56,31 @@ This is a Gradle plugin (`io.github.fornewid.manifest-shield`) that detects unin
 1. `ManifestVisitor` — DOM XML parsing of merged manifest → `ManifestExtraction` (20+ element types)
 2. `BlameLogParser` — Parses AGP's `manifest-merger-<variant>-report.txt` blame log → `Map<String, List<String>>` (element → list of sources). Handles ADDED, INJECTED, MERGED, IMPLIED, CONVERTED actions. Resolves module paths from file paths using project root dir.
 
-**Output format**: Sections grouped by `<manifest>` and `<application>` level, ordered per Android documentation. Empty categories are omitted. Intent-filters are nested under their parent component.
+**Output format**: Sections grouped by `<manifest>` and `<application>` level, ordered per Android documentation. Empty categories are omitted. Intent-filters are opt-in (`intentFilter = false` by default).
+
+**Configuration cache**: Fully compatible. No lambda properties remain (`allowedFilter` and `baselineMap` were removed).
+
+### Default Values
+
+- **`true` by default** (security/capability): `usesPermission`, `usesFeature`, `activity`, `service`, `receiver`, `provider`, `startup`, `queries`
+- **`false` by default** (verbose/niche): `usesSdk`, `permission`, `activityAlias`, `intentFilter`, `usesPermissionSdk23`, `supportsScreens`, `compatibleScreens`, `usesConfiguration`, `supportsGlTexture`, `metaData`, `usesLibrary`, `usesNativeLibrary`, `profileable`
 
 ### Test Structure
 
 - `src/test/` — Unit tests (JUnit Jupiter + Google Truth). Model `toBaselineString()` tests, parser tests, diff tests.
-- `src/gradleTest/` — Integration tests using GradleRunner. `AndroidProject` fixture creates temporary Android projects with the plugin injected via buildscript classpath (not `withPluginClasspath()`, to avoid AGP classloader isolation).
+- `src/gradleTest/` — Integration tests using GradleRunner. `AndroidProject` fixture creates temporary Android projects with the plugin injected via buildscript classpath (not `withPluginClasspath()`, to avoid AGP classloader isolation). Each configuration property has paired tests (include/exclude).
 
 The `gradleTest` fixture reads `ANDROID_HOME` from environment, then falls back to `local.properties` up the directory tree.
+
+## Publishing
+
+- **Maven Central** via Sonatype Central Portal (`SonatypeHost.CENTRAL_PORTAL`)
+- **In-memory GPG signing** via `ORG_GRADLE_PROJECT_signingInMemoryKey*` environment variables
+- **Workflows**:
+  - `publish.yml` — Triggered on main push. Skips SNAPSHOT versions. Publishes to Maven Central, creates git tag, bumps to next SNAPSHOT.
+  - `release.yml` — Manual trigger (`workflow_dispatch`). Creates a release PR that removes `-SNAPSHOT` from version.
+  - `release-drafter.yml` — Updates draft release notes on every main push.
+- **Branch protection bypass**: Uses `GH_PAT` (Fine-grained PAT) + Ruleset bypass for "Repository admin" to allow SNAPSHOT bump commits.
 
 ## AGP Manifest Merger ActionType
 
@@ -92,7 +109,8 @@ Update these files in order:
 6. `EnabledCategories.kt` — Add field + `from()` mapping
 7. `ManifestShieldListTask.kt` — Add to section builder
 8. `SourcesContentBuilder.kt` — Add to source-grouped output
-9. Update unit tests and `README.md`
+9. Add paired gradleTest (include by default / exclude when disabled, or vice versa)
+10. Update `README.md` configuration table
 
 Reference:
 - https://developer.android.com/guide/topics/manifest/manifest-element
