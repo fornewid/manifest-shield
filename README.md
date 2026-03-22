@@ -1,6 +1,7 @@
 # :shield: Manifest Shield
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.fornewid.manifest-shield/manifest-shield)](https://central.sonatype.com/artifact/io.github.fornewid.manifest-shield/manifest-shield)
+[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/io.github.fornewid.manifest-shield)](https://plugins.gradle.org/plugin/io.github.fornewid.manifest-shield)
 [![Build](https://github.com/fornewid/manifest-shield/actions/workflows/build.yml/badge.svg)](https://github.com/fornewid/manifest-shield/actions/workflows/build.yml)
 [![License](https://img.shields.io/github/license/fornewid/manifest-shield)](LICENSE)
 

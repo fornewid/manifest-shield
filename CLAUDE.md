@@ -75,9 +75,10 @@ The `gradleTest` fixture reads `ANDROID_HOME` from environment, then falls back 
 ## Publishing
 
 - **Maven Central** via Sonatype Central Portal (`SonatypeHost.CENTRAL_PORTAL`)
+- **Gradle Plugin Portal** via `com.gradle.plugin-publish` plugin
 - **In-memory GPG signing** via `ORG_GRADLE_PROJECT_signingInMemoryKey*` environment variables
 - **Workflows**:
-  - `publish.yml` — Triggered on main push. Skips SNAPSHOT versions. Publishes to Maven Central, creates git tag, bumps to next SNAPSHOT.
+  - `publish.yml` — Triggered on main push. Skips SNAPSHOT versions. Publishes to Maven Central + Gradle Plugin Portal, creates git tag, bumps to next SNAPSHOT.
   - `release.yml` — Manual trigger (`workflow_dispatch`). Creates a release PR that removes `-SNAPSHOT` from version.
   - `release-drafter.yml` — Updates draft release notes on every main push.
 - **Branch protection bypass**: Uses `GH_PAT` (Fine-grained PAT) + Ruleset bypass for "Repository admin" to allow SNAPSHOT bump commits.
