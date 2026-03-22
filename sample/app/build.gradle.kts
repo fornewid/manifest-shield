@@ -5,11 +5,11 @@ plugins {
 
 android {
     namespace = "io.github.fornewid.manifest.shield.sample.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 23
-        targetSdk = 35
+        targetSdk = 36
     }
 }
 
