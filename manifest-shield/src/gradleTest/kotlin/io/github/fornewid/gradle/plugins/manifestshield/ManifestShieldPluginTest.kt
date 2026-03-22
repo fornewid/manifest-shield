@@ -8,6 +8,143 @@ import org.junit.jupiter.api.Test
 
 internal class ManifestShieldPluginTest {
 
+    companion object {
+        private val MANIFEST_WITH_SERVICE = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <service android:name=".MyService" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_RECEIVER = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <receiver android:name=".MyReceiver" android:exported="false" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_PROVIDER = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <provider
+                        android:name=".MyProvider"
+                        android:authorities="io.github.fornewid.test.provider"
+                        android:exported="false" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_USES_FEATURE = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-feature android:name="android.hardware.camera" android:required="true" />
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_STARTUP = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <provider
+                        android:name="androidx.startup.InitializationProvider"
+                        android:authorities="io.github.fornewid.test.androidx-startup"
+                        android:exported="false">
+                        <meta-data
+                            android:name="com.example.MyInitializer"
+                            android:value="androidx.startup" />
+                    </provider>
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_PERMISSION = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <permission android:name="com.example.CUSTOM" android:protectionLevel="signature" />
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_ACTIVITY_ALIAS = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <activity-alias
+                        android:name=".Shortcut"
+                        android:targetActivity=".MainActivity"
+                        android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_USES_PERMISSION_SDK_23 = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-permission-sdk-23 android:name="android.permission.ACCESS_FINE_LOCATION" />
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_META_DATA = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <meta-data android:name="com.example.KEY" android:value="val" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_USES_LIBRARY = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <uses-library android:name="org.apache.http.legacy" android:required="false" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_PROFILEABLE = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <profileable android:shell="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_QUERIES = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <queries>
+                    <package android:name="com.example.foo" />
+                </queries>
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+    }
+
     @Test
     fun `baseline task creates merged baseline file`() {
         AndroidProject().use { project ->
@@ -248,17 +385,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline excludes meta-data by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <meta-data android:name="com.example.KEY" android:value="val" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_META_DATA)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -279,17 +406,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <meta-data android:name="com.example.KEY" android:value="val" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_META_DATA)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -303,17 +420,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline excludes uses-library by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <uses-library android:name="org.apache.http.legacy" android:required="false" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_USES_LIBRARY)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -334,17 +441,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <uses-library android:name="org.apache.http.legacy" android:required="false" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_USES_LIBRARY)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -358,17 +455,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline excludes profileable by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <profileable android:shell="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_PROFILEABLE)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -389,17 +476,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <profileable android:shell="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_PROFILEABLE)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -412,17 +489,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline excludes permission by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <permission android:name="com.example.CUSTOM" android:protectionLevel="signature" />
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_PERMISSION)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -443,17 +510,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <permission android:name="com.example.CUSTOM" android:protectionLevel="signature" />
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_PERMISSION)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -467,20 +524,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline excludes activity-alias by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <activity-alias
-                            android:name=".Shortcut"
-                            android:targetActivity=".MainActivity"
-                            android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_ACTIVITY_ALIAS)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -501,20 +545,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <activity-alias
-                            android:name=".Shortcut"
-                            android:targetActivity=".MainActivity"
-                            android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_ACTIVITY_ALIAS)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -528,17 +559,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline excludes uses-permission-sdk-23 by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <uses-permission-sdk-23 android:name="android.permission.ACCESS_FINE_LOCATION" />
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_USES_PERMISSION_SDK_23)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -559,17 +580,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <uses-permission-sdk-23 android:name="android.permission.ACCESS_FINE_LOCATION" />
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_USES_PERMISSION_SDK_23)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -583,24 +594,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline includes startup by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <provider
-                            android:name="androidx.startup.InitializationProvider"
-                            android:authorities="io.github.fornewid.test.androidx-startup"
-                            android:exported="false">
-                            <meta-data
-                                android:name="com.example.MyInitializer"
-                                android:value="androidx.startup" />
-                        </provider>
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_STARTUP)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -622,24 +616,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <provider
-                            android:name="androidx.startup.InitializationProvider"
-                            android:authorities="io.github.fornewid.test.androidx-startup"
-                            android:exported="false">
-                            <meta-data
-                                android:name="com.example.MyInitializer"
-                                android:value="androidx.startup" />
-                        </provider>
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_STARTUP)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -652,17 +629,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline includes uses-feature by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <uses-feature android:name="android.hardware.camera" android:required="true" />
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_USES_FEATURE)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -684,17 +651,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <uses-feature android:name="android.hardware.camera" android:required="true" />
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_USES_FEATURE)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -707,17 +664,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline includes service by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <service android:name=".MyService" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_SERVICE)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -739,17 +686,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <service android:name=".MyService" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_SERVICE)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -762,17 +699,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline includes receiver by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <receiver android:name=".MyReceiver" android:exported="false" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_RECEIVER)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -794,17 +721,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <receiver android:name=".MyReceiver" android:exported="false" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_RECEIVER)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -817,20 +734,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline includes provider by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <provider
-                            android:name=".MyProvider"
-                            android:authorities="io.github.fornewid.test.provider"
-                            android:exported="false" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_PROVIDER)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -852,20 +756,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                        <provider
-                            android:name=".MyProvider"
-                            android:authorities="io.github.fornewid.test.provider"
-                            android:exported="false" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_PROVIDER)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -878,19 +769,7 @@ internal class ManifestShieldPluginTest {
     @Test
     fun `baseline includes queries by default`() {
         AndroidProject().use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <queries>
-                        <package android:name="com.example.foo" />
-                    </queries>
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_QUERIES)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
@@ -912,19 +791,7 @@ internal class ManifestShieldPluginTest {
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <queries>
-                        <package android:name="com.example.foo" />
-                    </queries>
-                    <application>
-                        <activity android:name=".MainActivity" android:exported="true" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
+            project.updateManifest(MANIFEST_WITH_QUERIES)
 
             build(project, ":app:manifestShieldBaselineRelease")
 
