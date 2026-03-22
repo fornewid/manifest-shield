@@ -1,0 +1,51 @@
+package io.github.fornewid.gradle.plugins.manifestshield.internal
+
+internal data class EnabledCategories(
+    val usesSdk: Boolean,
+    val usesFeature: Boolean,
+    val usesPermission: Boolean,
+    val usesPermissionSdk23: Boolean,
+    val permission: Boolean,
+    val supportsScreens: Boolean,
+    val compatibleScreens: Boolean,
+    val usesConfiguration: Boolean,
+    val supportsGlTexture: Boolean,
+    val queries: Boolean,
+    val activity: Boolean,
+    val activityAlias: Boolean,
+    val metaData: Boolean,
+    val service: Boolean,
+    val receiver: Boolean,
+    val provider: Boolean,
+    val usesLibrary: Boolean,
+    val usesNativeLibrary: Boolean,
+    val profileable: Boolean,
+    val intentFilter: Boolean,
+    val startup: Boolean,
+) {
+    companion object {
+        fun from(flags: ShieldFlags): EnabledCategories = EnabledCategories(
+            usesSdk = flags.guardUsesSdk.get(),
+            usesFeature = flags.guardUsesFeature.get(),
+            usesPermission = flags.guardUsesPermission.get(),
+            usesPermissionSdk23 = flags.guardUsesPermissionSdk23.get(),
+            permission = flags.guardPermission.get(),
+            supportsScreens = flags.guardSupportsScreens.get(),
+            compatibleScreens = flags.guardCompatibleScreens.get(),
+            usesConfiguration = flags.guardUsesConfiguration.get(),
+            supportsGlTexture = flags.guardSupportsGlTexture.get(),
+            queries = flags.guardQueries.get(),
+            activity = flags.guardActivity.get(),
+            activityAlias = flags.guardActivityAlias.get(),
+            metaData = flags.guardMetaData.get(),
+            service = flags.guardService.get(),
+            receiver = flags.guardReceiver.get(),
+            provider = flags.guardProvider.get(),
+            usesLibrary = flags.guardUsesLibrary.get(),
+            usesNativeLibrary = flags.guardUsesNativeLibrary.get(),
+            profileable = flags.guardProfileable.get(),
+            intentFilter = flags.guardIntentFilter.get(),
+            startup = flags.guardStartup.get(),
+        )
+    }
+}

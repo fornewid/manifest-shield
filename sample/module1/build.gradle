@@ -1,0 +1,22 @@
+plugins {
+    alias(libs.plugins.android.library)
+    id("io.github.fornewid.manifest-shield")
+}
+
+android {
+    namespace = "io.github.fornewid.manifest.shield.sample.module1"
+    compileSdk = 35
+    defaultConfig {
+        minSdk = 23
+    }
+}
+
+dependencies {
+    implementation project(':sample:module2')
+}
+
+manifestShield {
+    configuration("release") {
+        // library module test: track permissions declared in this module
+    }
+}
