@@ -835,27 +835,6 @@ internal class ManifestShieldPluginTest {
         }
     }
 
-    @Test
-    fun `baselineMap transforms entries in baseline`() {
-        val pluginConfig = """
-            manifestShield {
-                configuration("release") {
-                    usesPermission = true
-                    baselineMap = { entry ->
-                        entry.contains("INTERNET") ? null : entry
-                    }
-                }
-            }
-        """.trimIndent()
-
-        AndroidProject(pluginConfig = pluginConfig).use { project ->
-            build(project, ":app:manifestShieldBaselineRelease")
-
-            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
-            assertThat(baseline).isNotNull()
-            assertThat(baseline).doesNotContain("INTERNET")
-        }
-    }
 
     @Test
     fun `tasks report configuration cache incompatibility gracefully`() {

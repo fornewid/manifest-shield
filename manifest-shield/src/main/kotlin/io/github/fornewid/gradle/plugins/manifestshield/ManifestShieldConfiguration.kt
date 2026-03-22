@@ -109,8 +109,4 @@ public open class ManifestShieldConfiguration @Inject constructor(
     /** Filter to determine if a manifest entry is allowed */
     @get:Input
     public var allowedFilter: (entryName: String) -> Boolean = { true }
-
-    /** Transform or remove (by returning null) entries from the baseline */
-    @get:Input
-    public var baselineMap: (entryName: String) -> String? = { it }
 }

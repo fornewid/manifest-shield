@@ -11,11 +11,10 @@ internal object SourcesContentBuilder {
         entries: List<ManifestEntry>,
         elementType: String,
         sourceMap: Map<String, List<String>>,
-        baselineMap: (String) -> String?,
     ): String {
         if (sourceMap.isEmpty()) {
             return entries
-                .mapNotNull { entry -> baselineMap(entry.toBaselineString())?.let { "$it -- unknown" } }
+                .map { entry -> "${entry.toBaselineString()} -- unknown" }
                 .joinToString("\n", postfix = if (entries.isNotEmpty()) "\n" else "")
         }
 
@@ -23,7 +22,7 @@ internal object SourcesContentBuilder {
         for (entry in entries) {
             val key = "$elementType#${entry.name}"
             val sources = sourceMap[key] ?: listOf("unknown")
-            val line = baselineMap(entry.toBaselineString()) ?: continue
+            val line = entry.toBaselineString()
             for (source in sources) {
                 grouped.getOrPut(source) { mutableListOf() }.add(line)
             }
@@ -50,7 +49,6 @@ internal object SourcesContentBuilder {
     fun buildMerged(
         categories: List<Triple<String, String, List<ManifestEntry>>>,
         sourceMap: Map<String, List<String>>,
-        baselineMap: (String) -> String?,
     ): String {
         val applicationLevel = listOf("activity", "activity-alias", "service", "receiver", "provider")
 
@@ -61,7 +59,7 @@ internal object SourcesContentBuilder {
             for (entry in entries) {
                 val key = "$elementType#${entry.name}"
                 val sources = sourceMap[key] ?: listOf("unknown")
-                val line = baselineMap(entry.toBaselineString()) ?: continue
+                val line = entry.toBaselineString()
                 for (source in sources) {
                     sourceTagEntries
                         .getOrPut(source) { mutableMapOf() }
@@ -104,7 +102,6 @@ internal object SourcesContentBuilder {
     fun buildMergedWithSdk(
         manifest: ManifestExtraction,
         sourceMap: Map<String, List<String>>,
-        baselineMap: (String) -> String?,
         projectPath: String,
         flags: EnabledCategories,
     ): String {
@@ -120,7 +117,7 @@ internal object SourcesContentBuilder {
             for (entry in entries) {
                 val key = "$elementType#${entry.name}"
                 val entrySources = sourceMap[key] ?: listOf("unknown")
-                val line = baselineMap(entry.toBaselineString()) ?: continue
+                val line = entry.toBaselineString()
                 for (source in entrySources) {
                     val lines = sourceTagEntries
                         .getOrPut(source) { mutableMapOf() }

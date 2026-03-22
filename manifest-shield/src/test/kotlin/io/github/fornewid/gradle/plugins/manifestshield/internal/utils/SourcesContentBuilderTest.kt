@@ -18,7 +18,6 @@ internal class SourcesContentBuilderTest {
             entries = entries,
             elementType = "uses-permission",
             sourceMap = emptyMap(),
-            baselineMap = { it },
         )
         assertThat(result).contains("android.permission.INTERNET -- unknown")
         assertThat(result).contains("android.permission.CAMERA -- unknown")
@@ -40,7 +39,6 @@ internal class SourcesContentBuilderTest {
             entries = entries,
             elementType = "uses-permission",
             sourceMap = sourceMap,
-            baselineMap = { it },
         )
         val lines = result.lines().filter { it.isNotBlank() }
         assertThat(lines[0]).isEqualTo("app:")
@@ -64,7 +62,6 @@ internal class SourcesContentBuilderTest {
             entries = entries,
             elementType = "activity",
             sourceMap = sourceMap,
-            baselineMap = { it },
         )
         assertThat(result).contains("com.example.DetailActivity")
         assertThat(result).contains("com.example.MainActivity (exported)")
@@ -84,30 +81,9 @@ internal class SourcesContentBuilderTest {
             entries = entries,
             elementType = "activity",
             sourceMap = sourceMap,
-            baselineMap = { it },
         )
         val sourceLines = result.lines().filter { !it.startsWith("  ") && it.isNotBlank() }
         assertThat(sourceLines).containsExactly("com.a:lib:1.0:", "com.z:lib:1.0:").inOrder()
-    }
-
-    @Test
-    fun `build with baselineMap filters entries`() {
-        val entries = listOf(
-            ManifestPermission("android.permission.INTERNET"),
-            ManifestPermission("android.permission.SECRET"),
-        )
-        val sourceMap = mapOf(
-            "uses-permission#android.permission.INTERNET" to listOf("app"),
-            "uses-permission#android.permission.SECRET" to listOf("app"),
-        )
-        val result = SourcesContentBuilder.build(
-            entries = entries,
-            elementType = "uses-permission",
-            sourceMap = sourceMap,
-            baselineMap = { if (it.contains("SECRET")) null else it },
-        )
-        assertThat(result).contains("android.permission.INTERNET")
-        assertThat(result).doesNotContain("SECRET")
     }
 
     @Test
@@ -116,7 +92,6 @@ internal class SourcesContentBuilderTest {
             entries = emptyList(),
             elementType = "uses-permission",
             sourceMap = emptyMap(),
-            baselineMap = { it },
         )
         assertThat(result).isEmpty()
     }
