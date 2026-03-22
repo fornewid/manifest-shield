@@ -52,7 +52,6 @@ internal object SourcesContentBuilder {
         sourceMap: Map<String, List<String>>,
         baselineMap: (String) -> String?,
     ): String {
-        val manifestLevel = listOf("uses-feature", "uses-permission", "permission")
         val applicationLevel = listOf("activity", "activity-alias", "service", "receiver", "provider")
 
         // Group: source → tag → list of entries
@@ -163,19 +162,19 @@ internal object SourcesContentBuilder {
             }
         }
         if (flags.supportsScreens && manifest.supportsScreens != null) {
-            addProjectLines("supports-screens", manifest.supportsScreens!!.toBaselineLines())
+            addProjectLines("supports-screens", manifest.supportsScreens.toBaselineLines())
         }
         if (flags.compatibleScreens && manifest.compatibleScreens.isNotEmpty()) {
             addProjectLines("compatible-screens", manifest.compatibleScreens)
         }
         if (flags.usesConfiguration && manifest.usesConfiguration != null) {
-            addProjectLines("uses-configuration", manifest.usesConfiguration!!.toBaselineLines())
+            addProjectLines("uses-configuration", manifest.usesConfiguration.toBaselineLines())
         }
         if (flags.queries && manifest.queries != null) {
-            addProjectLines("queries", manifest.queries!!.toBaselineLines())
+            addProjectLines("queries", manifest.queries.toBaselineLines())
         }
         if (flags.profileable && manifest.profileable != null) {
-            addProjectLines("profileable", manifest.profileable!!.toBaselineLines())
+            addProjectLines("profileable", manifest.profileable.toBaselineLines())
         }
 
         // Startup initializers (attributed to the current project module)

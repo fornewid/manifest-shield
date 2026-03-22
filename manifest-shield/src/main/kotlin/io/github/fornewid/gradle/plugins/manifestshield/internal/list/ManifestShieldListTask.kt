@@ -150,11 +150,6 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         baselineMap: (String) -> String?,
         showIntentFilters: Boolean,
     ): String = buildString {
-        val manifestLevel = listOf("uses-sdk", "uses-feature", "uses-permission", "uses-permission-sdk-23", "permission",
-            "supports-screens", "compatible-screens", "uses-configuration", "supports-gl-texture", "queries")
-        val applicationLevel = listOf("activity", "activity-alias", "meta-data", "service", "receiver",
-            "profileable", "provider", "uses-library", "uses-native-library", "androidx.startup")
-
         // Collect all categories with their entries
         data class Section(val tag: String, val lines: List<String>)
 
@@ -183,21 +178,21 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             sections.add(Section("permission", manifest.permission.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
         }
         if (guardSupportsScreens.get() && manifest.supportsScreens != null) {
-            val lines = manifest.supportsScreens!!.toBaselineLines()
+            val lines = manifest.supportsScreens.toBaselineLines()
             if (lines.isNotEmpty()) sections.add(Section("supports-screens", lines))
         }
         if (guardCompatibleScreens.get() && manifest.compatibleScreens.isNotEmpty()) {
             sections.add(Section("compatible-screens", manifest.compatibleScreens))
         }
         if (guardUsesConfiguration.get() && manifest.usesConfiguration != null) {
-            val lines = manifest.usesConfiguration!!.toBaselineLines()
+            val lines = manifest.usesConfiguration.toBaselineLines()
             if (lines.isNotEmpty()) sections.add(Section("uses-configuration", lines))
         }
         if (guardSupportsGlTexture.get() && manifest.supportsGlTextures.isNotEmpty()) {
             sections.add(Section("supports-gl-texture", manifest.supportsGlTextures.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
         }
         if (guardQueries.get() && manifest.queries != null) {
-            val lines = manifest.queries!!.toBaselineLines()
+            val lines = manifest.queries.toBaselineLines()
             if (lines.isNotEmpty()) sections.add(Section("queries", lines))
         }
 
@@ -244,7 +239,7 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             sections.add(Section("uses-native-library", manifest.usesNativeLibraries.mapNotNull { baselineMap(it.toBaselineString()) }.sorted()))
         }
         if (guardProfileable.get() && manifest.profileable != null) {
-            val lines = manifest.profileable!!.toBaselineLines()
+            val lines = manifest.profileable.toBaselineLines()
             if (lines.isNotEmpty()) sections.add(Section("profileable", lines))
         }
         if (guardStartup.get() && manifest.startupInitializers.isNotEmpty()) {
