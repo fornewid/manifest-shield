@@ -17,19 +17,30 @@ jobs:
         with:
           token: ${{ secrets.GH_PAT }}
 
+      - name: Read current version
+        id: version
+        run: |
+          VERSION=$(grep 'VERSION_NAME=' manifest-shield/gradle.properties | cut -d'=' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
       - name: Copy CI gradle.properties
+        if: ${{ !endsWith(steps.version.outputs.version, '-SNAPSHOT') }}
         run: mkdir -p ~/.gradle && cp .github/ci-gradle.properties ~/.gradle/gradle.properties
 
       - name: Set up JDK 17
+        if: ${{ !endsWith(steps.version.outputs.version, '-SNAPSHOT') }}
         uses: actions/setup-java@v5
         with:
           distribution: zulu
           java-version: 17
 
       - name: Setup Gradle
+        if: ${{ !endsWith(steps.version.outputs.version, '-SNAPSHOT') }}
         uses: gradle/actions/setup-gradle@v5
 
       - name: Publish to Maven Central
+        if: ${{ !endsWith(steps.version.outputs.version, '-SNAPSHOT') }}
         run: ./gradlew :manifest-shield:publish --no-parallel --stacktrace
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
@@ -37,12 +48,6 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-
-      - name: Read current version
-        id: version
-        run: |
-          VERSION=$(grep 'VERSION_NAME=' manifest-shield/gradle.properties | cut -d'=' -f2)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create git tag
         if: ${{ !endsWith(steps.version.outputs.version, '-SNAPSHOT') }}
