@@ -246,6 +246,177 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
+    fun `baseline includes service by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <service android:name=".MyService" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("service:")
+            assertThat(baseline).contains("MyService")
+        }
+    }
+
+    @Test
+    fun `baseline excludes service when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    service = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <service android:name=".MyService" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("service:")
+        }
+    }
+
+    @Test
+    fun `baseline includes receiver by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <receiver android:name=".MyReceiver" android:exported="false" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("receiver:")
+            assertThat(baseline).contains("MyReceiver")
+        }
+    }
+
+    @Test
+    fun `baseline excludes receiver when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    receiver = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <receiver android:name=".MyReceiver" android:exported="false" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("receiver:")
+        }
+    }
+
+    @Test
+    fun `baseline includes provider by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <provider
+                            android:name=".MyProvider"
+                            android:authorities="io.github.fornewid.test.provider"
+                            android:exported="false" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("provider:")
+            assertThat(baseline).contains("MyProvider")
+        }
+    }
+
+    @Test
+    fun `baseline excludes provider when disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    provider = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <application>
+                        <activity android:name=".MainActivity" android:exported="true" />
+                        <provider
+                            android:name=".MyProvider"
+                            android:authorities="io.github.fornewid.test.provider"
+                            android:exported="false" />
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("provider:")
+        }
+    }
+
+    @Test
     fun `baseline includes queries by default`() {
         AndroidProject().use { project ->
             project.updateManifest(
