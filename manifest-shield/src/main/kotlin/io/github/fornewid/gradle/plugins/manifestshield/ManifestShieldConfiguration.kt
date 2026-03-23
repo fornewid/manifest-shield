@@ -102,6 +102,10 @@ public open class ManifestShieldConfiguration @Inject constructor(
     @get:Input
     public var profileable: Boolean = false
 
+    /** Only include exported components (activity, service, receiver, provider) in the baseline */
+    @get:Input
+    public var exportedOnly: Boolean = true
+
     /** Enable source-attributed format grouped by library/module origin */
     @get:Input
     public var sources: Boolean = false
