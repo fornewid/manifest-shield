@@ -5,6 +5,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.language.base.plugins.LifecycleBasePlugin
+import java.util.Properties
 
 /**
  * A plugin for guarding against unintentional AndroidManifest.xml changes
@@ -19,6 +20,13 @@ public class ManifestShieldPlugin : Plugin<Project> {
         internal const val MANIFEST_SHIELD_TASK_NAME = "manifestShield"
 
         internal const val MANIFEST_SHIELD_BASELINE_TASK_NAME = "manifestShieldBaseline"
+
+        internal val VERSION: String by lazy {
+            ManifestShieldPlugin::class.java
+                .getResourceAsStream("/manifest-shield.properties")
+                ?.let { Properties().apply { load(it) }.getProperty("version") }
+                ?: "dev"
+        }
     }
 
     override fun apply(target: Project) {

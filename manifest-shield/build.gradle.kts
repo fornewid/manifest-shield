@@ -59,6 +59,14 @@ dependencies {
   compileOnly("com.android.tools.build:gradle:8.0.0")
 }
 
+tasks.named<ProcessResources>("processResources") {
+  val pluginVersion = project.version.toString()
+  inputs.property("pluginVersion", pluginVersion)
+  filesMatching("manifest-shield.properties") {
+    expand("version" to pluginVersion)
+  }
+}
+
 val deleteOldGradleTests = tasks.register<Delete>("deleteOldGradleTests") {
   delete(layout.buildDirectory.file("gradleTest"))
 }

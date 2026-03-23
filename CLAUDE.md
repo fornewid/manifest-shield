@@ -58,7 +58,7 @@ This is a Gradle plugin (`io.github.fornewid.manifest-shield`) that detects unin
 
 **Output format**: Sections grouped by `<manifest>` and `<application>` level, ordered per Android documentation. Empty categories are omitted. Intent-filters are opt-in (`intentFilter = false` by default).
 
-**Configuration cache**: Fully compatible. No lambda properties remain (`allowedFilter` and `baselineMap` were removed).
+**Configuration cache**: Fully compatible. Plugin version is declared as `@Input` on tasks to ensure CC invalidation on version upgrades. No lambda properties remain (`allowedFilter` and `baselineMap` were removed).
 
 ### Default Values
 
