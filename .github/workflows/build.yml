@@ -23,5 +23,19 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
+      - name: Verify release version
+        if: startsWith(github.head_ref, 'release/')
+        run: |
+          VERSION=$(grep 'VERSION_NAME=' manifest-shield/gradle.properties | cut -d'=' -f2)
+          if [[ "$VERSION" == *-SNAPSHOT ]]; then
+            echo "::error::Release branch must not have -SNAPSHOT version: $VERSION"
+            exit 1
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must be in major.minor.patch format: $VERSION"
+            exit 1
+          fi
+          echo "Release version verified: $VERSION"
+
       - name: Build and check
         run: ./gradlew :manifest-shield:check --stacktrace
