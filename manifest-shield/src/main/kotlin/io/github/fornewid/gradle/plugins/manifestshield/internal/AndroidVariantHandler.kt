@@ -72,13 +72,11 @@ internal object AndroidVariantHandler {
         baselineTask.configure { dependsOn(perConfigBaselineTask) }
 
         if (config.sources) {
-            val processManifestTaskName = "process${capitalizedName}MainManifest"
-
             val sourcesGuardTask = project.tasks.register(
                 "manifestShieldSources$capitalizedName",
                 ManifestSourcesDiffTask::class.java
             ) {
-                dependsOn(processManifestTaskName)
+                dependsOn(mergedManifest)
                 setParams(config, mergedManifest, blameLogProvider, project.path, project.rootDir, baselineDirectory, filePrefix, false)
             }
             perConfigGuardTask.configure { dependsOn(sourcesGuardTask) }
@@ -87,7 +85,7 @@ internal object AndroidVariantHandler {
                 "manifestShieldSourcesBaseline$capitalizedName",
                 ManifestSourcesDiffTask::class.java
             ) {
-                dependsOn(processManifestTaskName)
+                dependsOn(mergedManifest)
                 setParams(config, mergedManifest, blameLogProvider, project.path, project.rootDir, baselineDirectory, filePrefix, true)
             }
             perConfigBaselineTask.configure { dependsOn(sourcesBaselineTask) }
