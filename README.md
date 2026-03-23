@@ -136,6 +136,7 @@ Empty categories are omitted from the output.
 | `usesNativeLibrary` | `false` | Shield `<uses-native-library>` |
 | `profileable` | `false` | Shield `<profileable>` |
 | `exportedOnly` | **`true`** | Only include exported components in baseline |
+| `requiredOnly` | **`true`** | Only include required `<uses-feature>` and `<uses-library>` entries |
 
 ## Requirements
 

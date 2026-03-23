@@ -135,7 +135,11 @@ internal object SourcesContentBuilder {
             }
         }
 
-        if (flags.usesFeature && manifest.usesFeature.isNotEmpty()) addEntries("uses-feature", "uses-feature", manifest.usesFeature)
+        fun <T : ManifestEntry> filterRequired(entries: List<T>, isRequired: (T) -> Boolean): List<T> =
+            if (flags.requiredOnly) entries.filter(isRequired) else entries
+
+        val featureList = filterRequired(manifest.usesFeature) { it.required }
+        if (flags.usesFeature && featureList.isNotEmpty()) addEntries("uses-feature", "uses-feature", featureList)
         if (flags.usesPermission && manifest.usesPermission.isNotEmpty()) addEntries("uses-permission", "uses-permission", manifest.usesPermission)
         if (flags.usesPermissionSdk23 && manifest.usesPermissionSdk23.isNotEmpty()) addEntries("uses-permission-sdk-23", "uses-permission-sdk-23", manifest.usesPermissionSdk23)
         if (flags.permission && manifest.permission.isNotEmpty()) addEntries("permission", "permission", manifest.permission)
@@ -149,7 +153,8 @@ internal object SourcesContentBuilder {
         if (flags.service) filterComponents(manifest.service).let { if (it.isNotEmpty()) addEntries("service", "service", it, isComponent = true) }
         if (flags.receiver) filterComponents(manifest.receiver).let { if (it.isNotEmpty()) addEntries("receiver", "receiver", it, isComponent = true) }
         if (flags.provider) filterComponents(manifest.provider).let { if (it.isNotEmpty()) addEntries("provider", "provider", it, isComponent = true) }
-        if (flags.usesLibrary && manifest.usesLibraries.isNotEmpty()) addEntries("uses-library", "uses-library", manifest.usesLibraries)
+        val libList = filterRequired(manifest.usesLibraries) { it.required }
+        if (flags.usesLibrary && libList.isNotEmpty()) addEntries("uses-library", "uses-library", libList)
         if (flags.usesNativeLibrary && manifest.usesNativeLibraries.isNotEmpty()) addEntries("uses-native-library", "uses-native-library", manifest.usesNativeLibraries)
 
         // Non-ManifestEntry elements (attributed to the current project module)

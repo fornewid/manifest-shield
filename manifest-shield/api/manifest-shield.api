@@ -13,6 +13,7 @@ public class io/github/fornewid/gradle/plugins/manifestshield/ManifestShieldConf
 	public final fun getProvider ()Z
 	public final fun getQueries ()Z
 	public final fun getReceiver ()Z
+	public final fun getRequiredOnly ()Z
 	public final fun getService ()Z
 	public final fun getSources ()Z
 	public final fun getStartup ()Z
@@ -36,6 +37,7 @@ public class io/github/fornewid/gradle/plugins/manifestshield/ManifestShieldConf
 	public final fun setProvider (Z)V
 	public final fun setQueries (Z)V
 	public final fun setReceiver (Z)V
+	public final fun setRequiredOnly (Z)V
 	public final fun setService (Z)V
 	public final fun setSources (Z)V
 	public final fun setStartup (Z)V

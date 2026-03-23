@@ -144,6 +144,28 @@ internal class ManifestShieldPluginTest {
             </manifest>
         """.trimIndent()
 
+        private val MANIFEST_WITH_MIXED_FEATURES = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-feature android:name="android.hardware.camera" android:required="true" />
+                <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        private val MANIFEST_WITH_MIXED_LIBRARIES = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <uses-library android:name="org.apache.http.legacy" android:required="false" />
+                    <uses-library android:name="com.example.required.lib" android:required="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
         private val MANIFEST_WITH_MIXED_EXPORTED = """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -447,6 +469,7 @@ internal class ManifestShieldPluginTest {
             manifestShield {
                 configuration("release") {
                     usesLibrary = true
+                    requiredOnly = false
                 }
             }
         """.trimIndent()
@@ -875,6 +898,66 @@ internal class ManifestShieldPluginTest {
             assertThat(baseline).isNotNull()
             assertThat(baseline).contains("ExportedService")
             assertThat(baseline).contains("InternalService")
+        }
+    }
+
+    @Test
+    fun `baseline includes only required features by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_MIXED_FEATURES)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("uses-feature:")
+            assertThat(baseline).contains("android.hardware.camera")
+            assertThat(baseline).doesNotContain("android.hardware.bluetooth_le")
+        }
+    }
+
+    @Test
+    fun `baseline includes all features when requiredOnly disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    requiredOnly = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_MIXED_FEATURES)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("android.hardware.camera")
+            assertThat(baseline).contains("android.hardware.bluetooth_le")
+        }
+    }
+
+    @Test
+    fun `baseline includes only required libraries when requiredOnly enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    usesLibrary = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_MIXED_LIBRARIES)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("uses-library:")
+            assertThat(baseline).contains("com.example.required.lib")
+            assertThat(baseline).doesNotContain("org.apache.http.legacy")
         }
     }
 
