@@ -72,7 +72,7 @@ internal object AndroidVariantHandler {
         baselineTask.configure { dependsOn(perConfigBaselineTask) }
 
         if (config.sources) {
-            val processManifestTaskName = "process${capitalizedName}Manifest"
+            val processManifestTaskName = "process${capitalizedName}MainManifest"
 
             val sourcesGuardTask = project.tasks.register(
                 "manifestShieldSources$capitalizedName",
