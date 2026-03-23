@@ -125,7 +125,7 @@ Empty categories are omitted from the output.
 | `permission` | `false` | Shield `<permission>` |
 | `features` | **`true`** | Shield `<uses-feature>` |
 | `activities` | **`true`** | Shield `<activity>` |
-| `activityAlias` | `false` | Shield `<activity-alias>` |
+| `activityAlias` | **`true`** | Shield `<activity-alias>` |
 | `services` | **`true`** | Shield `<service>` |
 | `receivers` | **`true`** | Shield `<receiver>` |
 | `providers` | **`true`** | Shield `<provider>` |

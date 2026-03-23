@@ -36,7 +36,7 @@ public open class ManifestShieldConfiguration @Inject constructor(
 
     /** Guard activity-alias declarations */
     @get:Input
-    public var activityAlias: Boolean = false
+    public var activityAlias: Boolean = true
 
     /** Guard service declarations */
     @get:Input
