@@ -140,12 +140,15 @@ internal object SourcesContentBuilder {
         if (flags.usesPermissionSdk23 && manifest.usesPermissionSdk23.isNotEmpty()) addEntries("uses-permission-sdk-23", "uses-permission-sdk-23", manifest.usesPermissionSdk23)
         if (flags.permission && manifest.permission.isNotEmpty()) addEntries("permission", "permission", manifest.permission)
         if (flags.supportsGlTexture && manifest.supportsGlTextures.isNotEmpty()) addEntries("supports-gl-texture", "supports-gl-texture", manifest.supportsGlTextures)
-        if (flags.activity && manifest.activity.isNotEmpty()) addEntries("activity", "activity", manifest.activity, isComponent = true)
-        if (flags.activityAlias && manifest.activityAlias.isNotEmpty()) addEntries("activity-alias", "activity-alias", manifest.activityAlias, isComponent = true)
+        fun filterComponents(components: List<ManifestComponent>): List<ManifestComponent> =
+            if (flags.exportedOnly) components.filter { it.exported == true } else components
+
+        if (flags.activity) filterComponents(manifest.activity).let { if (it.isNotEmpty()) addEntries("activity", "activity", it, isComponent = true) }
+        if (flags.activityAlias) filterComponents(manifest.activityAlias).let { if (it.isNotEmpty()) addEntries("activity-alias", "activity-alias", it, isComponent = true) }
         if (flags.metaData && manifest.metaData.isNotEmpty()) addEntries("meta-data", "meta-data", manifest.metaData)
-        if (flags.service && manifest.service.isNotEmpty()) addEntries("service", "service", manifest.service, isComponent = true)
-        if (flags.receiver && manifest.receiver.isNotEmpty()) addEntries("receiver", "receiver", manifest.receiver, isComponent = true)
-        if (flags.provider && manifest.provider.isNotEmpty()) addEntries("provider", "provider", manifest.provider, isComponent = true)
+        if (flags.service) filterComponents(manifest.service).let { if (it.isNotEmpty()) addEntries("service", "service", it, isComponent = true) }
+        if (flags.receiver) filterComponents(manifest.receiver).let { if (it.isNotEmpty()) addEntries("receiver", "receiver", it, isComponent = true) }
+        if (flags.provider) filterComponents(manifest.provider).let { if (it.isNotEmpty()) addEntries("provider", "provider", it, isComponent = true) }
         if (flags.usesLibrary && manifest.usesLibraries.isNotEmpty()) addEntries("uses-library", "uses-library", manifest.usesLibraries)
         if (flags.usesNativeLibrary && manifest.usesNativeLibraries.isNotEmpty()) addEntries("uses-native-library", "uses-native-library", manifest.usesNativeLibraries)
 

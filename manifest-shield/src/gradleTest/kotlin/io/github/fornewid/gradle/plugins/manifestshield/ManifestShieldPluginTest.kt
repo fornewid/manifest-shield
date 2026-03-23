@@ -143,6 +143,17 @@ internal class ManifestShieldPluginTest {
                 </application>
             </manifest>
         """.trimIndent()
+
+        private val MANIFEST_WITH_MIXED_EXPORTED = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <service android:name=".InternalService" android:exported="false" />
+                    <service android:name=".ExportedService" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
     }
 
     @Test
@@ -227,7 +238,7 @@ internal class ManifestShieldPluginTest {
                                 <category android:name="android.intent.category.LAUNCHER" />
                             </intent-filter>
                         </activity>
-                        <activity android:name=".NewActivity" />
+                        <activity android:name=".NewActivity" android:exported="true" />
                     </application>
                 </manifest>
                 """.trimIndent()
@@ -663,7 +674,15 @@ internal class ManifestShieldPluginTest {
 
     @Test
     fun `baseline includes service by default`() {
-        AndroidProject().use { project ->
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    exportedOnly = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
             project.updateManifest(MANIFEST_WITH_SERVICE)
 
             build(project, ":app:manifestShieldBaselineRelease")
@@ -681,6 +700,7 @@ internal class ManifestShieldPluginTest {
             manifestShield {
                 configuration("release") {
                     service = false
+                    exportedOnly = false
                 }
             }
         """.trimIndent()
@@ -698,7 +718,15 @@ internal class ManifestShieldPluginTest {
 
     @Test
     fun `baseline includes receiver by default`() {
-        AndroidProject().use { project ->
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    exportedOnly = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
             project.updateManifest(MANIFEST_WITH_RECEIVER)
 
             build(project, ":app:manifestShieldBaselineRelease")
@@ -716,6 +744,7 @@ internal class ManifestShieldPluginTest {
             manifestShield {
                 configuration("release") {
                     receiver = false
+                    exportedOnly = false
                 }
             }
         """.trimIndent()
@@ -733,7 +762,15 @@ internal class ManifestShieldPluginTest {
 
     @Test
     fun `baseline includes provider by default`() {
-        AndroidProject().use { project ->
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    exportedOnly = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
             project.updateManifest(MANIFEST_WITH_PROVIDER)
 
             build(project, ":app:manifestShieldBaselineRelease")
@@ -751,6 +788,7 @@ internal class ManifestShieldPluginTest {
             manifestShield {
                 configuration("release") {
                     provider = false
+                    exportedOnly = false
                 }
             }
         """.trimIndent()
@@ -798,6 +836,45 @@ internal class ManifestShieldPluginTest {
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
             assertThat(baseline).doesNotContain("queries:")
+        }
+    }
+
+    @Test
+    fun `baseline includes only exported components by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_MIXED_EXPORTED)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("activity:")
+            assertThat(baseline).contains("MainActivity")
+            assertThat(baseline).contains("service:")
+            assertThat(baseline).contains("ExportedService")
+            assertThat(baseline).doesNotContain("InternalService")
+        }
+    }
+
+    @Test
+    fun `baseline includes all components when exportedOnly disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    exportedOnly = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_MIXED_EXPORTED)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("ExportedService")
+            assertThat(baseline).contains("InternalService")
         }
     }
 

@@ -135,6 +135,8 @@ Empty categories are omitted from the output.
 | `usesLibrary` | `false` | Shield `<uses-library>` |
 | `usesNativeLibrary` | `false` | Shield `<uses-native-library>` |
 | `profileable` | `false` | Shield `<profileable>` |
+| `exportedOnly` | **`true`** | Only include exported components in baseline |
+
 ## Requirements
 
 - Android Gradle Plugin 8.0.0+

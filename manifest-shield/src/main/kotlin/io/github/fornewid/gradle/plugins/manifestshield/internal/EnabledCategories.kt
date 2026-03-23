@@ -22,6 +22,7 @@ internal data class EnabledCategories(
     val profileable: Boolean,
     val intentFilter: Boolean,
     val startup: Boolean,
+    val exportedOnly: Boolean,
 ) {
     companion object {
         fun from(flags: ShieldFlags): EnabledCategories = EnabledCategories(
@@ -46,6 +47,7 @@ internal data class EnabledCategories(
             profileable = flags.guardProfileable.get(),
             intentFilter = flags.guardIntentFilter.get(),
             startup = flags.guardStartup.get(),
+            exportedOnly = flags.exportedOnly.get(),
         )
     }
 }
