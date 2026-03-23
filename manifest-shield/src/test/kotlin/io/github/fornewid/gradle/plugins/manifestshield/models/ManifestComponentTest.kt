@@ -49,4 +49,56 @@ internal class ManifestComponentTest {
         )
         assertThat(component.toBaselineString()).isEqualTo("com.example.ShortcutAlias (exported) -> com.example.MainActivity")
     }
+
+    @Test
+    fun `permissionLines with exported and permission`() {
+        val component = ManifestComponent(
+            name = "com.example.MyService", type = ComponentType.SERVICE,
+            exported = true, permission = "android.permission.BIND_JOB_SERVICE",
+        )
+        assertThat(component.permissionLines()).containsExactly("permission: android.permission.BIND_JOB_SERVICE")
+    }
+
+    @Test
+    fun `permissionLines with non-exported returns empty`() {
+        val component = ManifestComponent(
+            name = "com.example.MyService", type = ComponentType.SERVICE,
+            exported = false, permission = "android.permission.BIND_JOB_SERVICE",
+        )
+        assertThat(component.permissionLines()).isEmpty()
+    }
+
+    @Test
+    fun `permissionLines with null exported returns empty`() {
+        val component = ManifestComponent(
+            name = "com.example.MyService", type = ComponentType.SERVICE,
+            exported = null, permission = "android.permission.BIND_JOB_SERVICE",
+        )
+        assertThat(component.permissionLines()).isEmpty()
+    }
+
+    @Test
+    fun `permissionLines with provider readPermission and writePermission`() {
+        val component = ManifestComponent(
+            name = "com.example.MyProvider", type = ComponentType.PROVIDER,
+            exported = true,
+            permission = "android.permission.READ_CONTACTS",
+            readPermission = "android.permission.READ_CONTACTS",
+            writePermission = "android.permission.WRITE_CONTACTS",
+        )
+        assertThat(component.permissionLines()).containsExactly(
+            "permission: android.permission.READ_CONTACTS",
+            "readPermission: android.permission.READ_CONTACTS",
+            "writePermission: android.permission.WRITE_CONTACTS",
+        ).inOrder()
+    }
+
+    @Test
+    fun `permissionLines with exported but no permission returns empty`() {
+        val component = ManifestComponent(
+            name = "com.example.MyActivity", type = ComponentType.ACTIVITY,
+            exported = true,
+        )
+        assertThat(component.permissionLines()).isEmpty()
+    }
 }

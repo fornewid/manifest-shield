@@ -123,6 +123,11 @@ internal object SourcesContentBuilder {
                         .getOrPut(source) { mutableMapOf() }
                         .getOrPut(tag) { mutableListOf() }
                     lines.add(line)
+                    if (isComponent && entry is ManifestComponent) {
+                        for (permLine in entry.permissionLines()) {
+                            lines.add("  $permLine")
+                        }
+                    }
                     if (isComponent && guardIntentFilter && entry is ManifestComponent && entry.intentFilter.isNotEmpty()) {
                         for (filter in entry.intentFilter) {
                             lines.add("  intent-filter:")
