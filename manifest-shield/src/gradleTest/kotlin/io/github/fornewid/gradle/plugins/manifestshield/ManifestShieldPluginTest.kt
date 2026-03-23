@@ -802,6 +802,29 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
+    fun `sources task runs on clean build without manual processManifest`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    sources = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            // Directly invoke the sources baseline task — not the parent task.
+            // Without the processMainManifest dependency, this would fail because
+            // the blame log file does not exist yet.
+            val result = build(project, ":app:manifestShieldSourcesBaselineRelease")
+
+            assertThat(result.output).contains("Manifest Shield baseline created")
+
+            val sources = project.readBaselineFile("manifestShield/releaseAndroidManifest.sources.txt")
+            assertThat(sources).isNotNull()
+        }
+    }
+
+    @Test
     fun `sources baseline matches txt baseline content`() {
         val pluginConfig = """
             manifestShield {
