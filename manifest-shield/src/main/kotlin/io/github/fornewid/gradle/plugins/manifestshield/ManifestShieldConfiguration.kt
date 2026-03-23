@@ -106,6 +106,10 @@ public open class ManifestShieldConfiguration @Inject constructor(
     @get:Input
     public var exportedOnly: Boolean = true
 
+    /** Only include required entries for uses-feature and uses-library in the baseline */
+    @get:Input
+    public var requiredOnly: Boolean = true
+
     /** Enable source-attributed format grouped by library/module origin */
     @get:Input
     public var sources: Boolean = false

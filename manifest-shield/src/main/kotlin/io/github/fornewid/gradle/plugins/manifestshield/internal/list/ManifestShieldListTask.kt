@@ -15,6 +15,7 @@ import io.github.fornewid.gradle.plugins.manifestshield.internal.utils.Messaging
 import io.github.fornewid.gradle.plugins.manifestshield.internal.utils.OutputFileUtils
 import io.github.fornewid.gradle.plugins.manifestshield.internal.utils.Tasks.declareCompatibilities
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestComponent
+import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestEntry
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
@@ -65,6 +66,7 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
     abstract override val guardUsesNativeLibrary: Property<Boolean>
     abstract override val guardProfileable: Property<Boolean>
     abstract override val exportedOnly: Property<Boolean>
+    abstract override val requiredOnly: Property<Boolean>
 
     @get:OutputDirectory
     abstract val baselineDir: DirectoryProperty
@@ -129,8 +131,20 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         }
 
         // Entry-based manifest-level categories
+        val filterRequired = requiredOnly.get()
+        fun <T : ManifestEntry> addRequiredSection(
+            tag: String,
+            entries: List<T>,
+            isRequired: (T) -> Boolean,
+        ) {
+            val filtered = if (filterRequired) entries.filter(isRequired) else entries
+            if (filtered.isNotEmpty()) {
+                sections.add(Section(tag, filtered.map { it.toBaselineString() }.sorted()))
+            }
+        }
+
         if (guardUsesFeature.get() && manifest.usesFeature.isNotEmpty()) {
-            sections.add(Section("uses-feature", manifest.usesFeature.map { it.toBaselineString() }.sorted()))
+            addRequiredSection("uses-feature", manifest.usesFeature) { it.required }
         }
         if (guardUsesPermission.get() && manifest.usesPermission.isNotEmpty()) {
             sections.add(Section("uses-permission", manifest.usesPermission.map { it.toBaselineString() }.sorted()))
@@ -198,7 +212,7 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             sections.add(Section("provider", componentLines(manifest.provider)))
         }
         if (guardUsesLibrary.get() && manifest.usesLibraries.isNotEmpty()) {
-            sections.add(Section("uses-library", manifest.usesLibraries.map { it.toBaselineString() }.sorted()))
+            addRequiredSection("uses-library", manifest.usesLibraries) { it.required }
         }
         if (guardUsesNativeLibrary.get() && manifest.usesNativeLibraries.isNotEmpty()) {
             sections.add(Section("uses-native-library", manifest.usesNativeLibraries.map { it.toBaselineString() }.sorted()))

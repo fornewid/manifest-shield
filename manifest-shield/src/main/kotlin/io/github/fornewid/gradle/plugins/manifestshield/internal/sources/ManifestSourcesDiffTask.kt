@@ -77,6 +77,7 @@ internal abstract class ManifestSourcesDiffTask : DefaultTask(), ShieldFlags {
     abstract override val guardUsesNativeLibrary: Property<Boolean>
     abstract override val guardProfileable: Property<Boolean>
     abstract override val exportedOnly: Property<Boolean>
+    abstract override val requiredOnly: Property<Boolean>
 
     @get:OutputDirectory
     abstract val baselineDir: DirectoryProperty
