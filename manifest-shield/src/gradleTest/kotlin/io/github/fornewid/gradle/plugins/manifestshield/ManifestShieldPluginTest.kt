@@ -569,7 +569,7 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
-    fun `baseline excludes activity-alias by default`() {
+    fun `baseline includes activity-alias by default`() {
         AndroidProject().use { project ->
             project.updateManifest(MANIFEST_WITH_ACTIVITY_ALIAS)
 
@@ -577,16 +577,17 @@ internal class ManifestShieldPluginTest {
 
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
-            assertThat(baseline).doesNotContain("activity-alias:")
+            assertThat(baseline).contains("activity-alias:")
+            assertThat(baseline).contains("Shortcut")
         }
     }
 
     @Test
-    fun `baseline includes activity-alias when enabled`() {
+    fun `baseline excludes activity-alias when disabled`() {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
-                    activityAlias = true
+                    activityAlias = false
                 }
             }
         """.trimIndent()
@@ -598,8 +599,7 @@ internal class ManifestShieldPluginTest {
 
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
-            assertThat(baseline).contains("activity-alias:")
-            assertThat(baseline).contains("Shortcut")
+            assertThat(baseline).doesNotContain("activity-alias:")
         }
     }
 
