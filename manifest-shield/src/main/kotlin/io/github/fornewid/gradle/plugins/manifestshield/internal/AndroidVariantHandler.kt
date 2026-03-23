@@ -76,6 +76,7 @@ internal object AndroidVariantHandler {
                 "manifestShieldSources$capitalizedName",
                 ManifestSourcesDiffTask::class.java
             ) {
+                dependsOn(mergedManifest)
                 setParams(config, mergedManifest, blameLogProvider, project.path, project.rootDir, baselineDirectory, filePrefix, false)
             }
             perConfigGuardTask.configure { dependsOn(sourcesGuardTask) }
@@ -84,6 +85,7 @@ internal object AndroidVariantHandler {
                 "manifestShieldSourcesBaseline$capitalizedName",
                 ManifestSourcesDiffTask::class.java
             ) {
+                dependsOn(mergedManifest)
                 setParams(config, mergedManifest, blameLogProvider, project.path, project.rootDir, baselineDirectory, filePrefix, true)
             }
             perConfigBaselineTask.configure { dependsOn(sourcesBaselineTask) }
