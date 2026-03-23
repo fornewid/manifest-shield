@@ -85,7 +85,13 @@ uses-permission:
 
 activity:
   io.github.fornewid.manifest.shield.sample.app.MainActivity (exported)
+
+service:
+  io.github.fornewid.manifest.shield.sample.app.BoundService (exported)
+    permission: android.permission.BIND_JOB_SERVICE
 ```
+
+Permission attributes (`android:permission`, `android:readPermission`, `android:writePermission`) are shown as indented lines below exported components.
 
 **releaseAndroidManifest.sources.txt** — grouped by source module/library (when `sources = true`):
 

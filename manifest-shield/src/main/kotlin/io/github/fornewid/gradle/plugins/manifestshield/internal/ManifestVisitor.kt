@@ -228,6 +228,7 @@ internal object ManifestVisitor {
                         else -> null
                     },
                     targetActivity = targetActivity,
+                    permission = node.attrNS("permission"),
                     intentFilter = node.parseIntentFilters(),
                 )
             }
@@ -249,6 +250,9 @@ internal object ManifestVisitor {
                         else -> null
                     },
                     authorities = node.attrNS("authorities"),
+                    permission = node.attrNS("permission"),
+                    readPermission = node.attrNS("readPermission"),
+                    writePermission = node.attrNS("writePermission"),
                 )
             }
             .distinct().sortedBy { it.name }

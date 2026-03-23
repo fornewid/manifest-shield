@@ -181,6 +181,9 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             val lines = mutableListOf<String>()
             for (comp in filtered.sortedBy { it.name }) {
                 lines.add(comp.toBaselineString())
+                for (permLine in comp.permissionLines()) {
+                    lines.add("  $permLine")
+                }
                 if (showIntentFilters && comp.intentFilter.isNotEmpty()) {
                     for (filter in comp.intentFilter) {
                         lines.add("  intent-filter:")

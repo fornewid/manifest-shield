@@ -6,6 +6,9 @@ internal data class ManifestComponent(
     val exported: Boolean?,
     val targetActivity: String? = null,
     val authorities: String? = null,
+    val permission: String? = null,
+    val readPermission: String? = null,
+    val writePermission: String? = null,
     val intentFilter: List<IntentFilterInfo> = emptyList(),
 ) : ManifestEntry {
 
@@ -20,6 +23,16 @@ internal data class ManifestComponent(
         if (targetActivity != null) {
             append(" -> $targetActivity")
         }
+    }
+
+    /** Permission lines for exported components (indented format). */
+    fun permissionLines(): List<String> {
+        if (exported != true) return emptyList()
+        val lines = mutableListOf<String>()
+        permission?.let { lines.add("permission: $it") }
+        readPermission?.let { lines.add("readPermission: $it") }
+        writePermission?.let { lines.add("writePermission: $it") }
+        return lines
     }
 }
 

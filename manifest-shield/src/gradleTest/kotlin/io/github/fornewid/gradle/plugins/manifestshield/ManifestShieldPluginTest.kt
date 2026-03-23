@@ -166,6 +166,19 @@ internal class ManifestShieldPluginTest {
             </manifest>
         """.trimIndent()
 
+        private val MANIFEST_WITH_PERMISSION_COMPONENT = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <service android:name=".BoundService" android:exported="true"
+                        android:permission="android.permission.BIND_JOB_SERVICE" />
+                    <service android:name=".InternalService" android:exported="false"
+                        android:permission="com.example.INTERNAL" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
         private val MANIFEST_WITH_MIXED_EXPORTED = """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -898,6 +911,23 @@ internal class ManifestShieldPluginTest {
             assertThat(baseline).isNotNull()
             assertThat(baseline).contains("ExportedService")
             assertThat(baseline).contains("InternalService")
+        }
+    }
+
+    @Test
+    fun `baseline shows permission on exported components`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_PERMISSION_COMPONENT)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("service:")
+            assertThat(baseline).contains("BoundService (exported)")
+            assertThat(baseline).contains("  permission: android.permission.BIND_JOB_SERVICE")
+            // InternalService is exported=false, so its permission should not appear
+            assertThat(baseline).doesNotContain("com.example.INTERNAL")
         }
     }
 
