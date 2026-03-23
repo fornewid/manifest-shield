@@ -154,7 +154,7 @@ manifestShield {
 | `compatibleScreens` | `false` | Shield `<compatible-screens>` |
 | `usesConfiguration` | `false` | Shield `<uses-configuration>` |
 | `supportsGlTexture` | `false` | Shield `<supports-gl-texture>` |
-| `queries` | **`true`** | Shield `<queries>` |
+| `queries` | `false` | Shield `<queries>` |
 | `metaData` | `false` | Shield `<meta-data>` (non-primitive values shown as `(REDACTED)`) |
 | `usesLibrary` | `false` | Shield `<uses-library>` |
 | `usesNativeLibrary` | `false` | Shield `<uses-native-library>` |

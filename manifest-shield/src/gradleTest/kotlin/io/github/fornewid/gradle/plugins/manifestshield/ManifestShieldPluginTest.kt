@@ -841,7 +841,7 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
-    fun `baseline includes queries by default`() {
+    fun `baseline excludes queries by default`() {
         AndroidProject().use { project ->
             project.updateManifest(MANIFEST_WITH_QUERIES)
 
@@ -849,17 +849,16 @@ internal class ManifestShieldPluginTest {
 
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
-            assertThat(baseline).contains("queries:")
-            assertThat(baseline).contains("  package: com.example.foo")
+            assertThat(baseline).doesNotContain("queries:")
         }
     }
 
     @Test
-    fun `baseline excludes queries when disabled`() {
+    fun `baseline includes queries when enabled`() {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
-                    queries = false
+                    queries = true
                 }
             }
         """.trimIndent()
@@ -871,7 +870,8 @@ internal class ManifestShieldPluginTest {
 
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
-            assertThat(baseline).doesNotContain("queries:")
+            assertThat(baseline).contains("queries:")
+            assertThat(baseline).contains("  package: com.example.foo")
         }
     }
 

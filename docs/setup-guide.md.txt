@@ -78,7 +78,6 @@ The plugin guards the following by default (no configuration needed):
 - `<uses-permission>`
 - `<uses-feature>` (only `android:required="true"` entries)
 - `<activity>`, `<activity-alias>`, `<service>`, `<receiver>`, `<provider>` (only `android:exported="true"` components)
-- `<queries>`
 - `androidx.startup` initializers
 - `android:permission` attributes on exported components
 
@@ -95,6 +94,7 @@ These are disabled by default. Only add them when the user requests:
 | Property | Description |
 |----------|-------------|
 | `sources = true` | Generate source-attributed baseline grouped by library/module |
+| `queries = true` | Track `<queries>` (package visibility declarations) |
 | `metaData = true` | Track `<meta-data>` entries |
 | `intentFilter = true` | Track `<intent-filter>` on components |
 | `usesSdk = true` | Track `<uses-sdk>` (minSdkVersion, targetSdkVersion) |
