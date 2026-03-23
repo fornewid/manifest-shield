@@ -1078,4 +1078,47 @@ internal class ManifestShieldPluginTest {
             assertThat(third.output).contains("Reusing configuration cache")
         }
     }
+
+    @Test
+    fun `configuration cache is invalidated when config changes`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    exportedOnly = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(
+            manifestContent = MANIFEST_WITH_MIXED_EXPORTED,
+            pluginConfig = pluginConfig,
+        ).use { project ->
+            // Run 1-2: store CC + stabilize
+            build(project, ":app:manifestShieldBaselineRelease", "--configuration-cache")
+            build(project, ":app:manifestShieldBaselineRelease", "--configuration-cache")
+
+            // Run 3: CC reused
+            val reused = build(project, ":app:manifestShieldBaselineRelease", "--configuration-cache")
+            assertThat(reused.output).contains("Reusing configuration cache")
+
+            val baseline1 = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline1).contains("InternalService")
+
+            // Change config: exportedOnly = true
+            project.updatePluginConfig("""
+                manifestShield {
+                    configuration("release") {
+                        exportedOnly = true
+                    }
+                }
+            """.trimIndent())
+
+            // Run 4: CC should be invalidated
+            val invalidated = build(project, ":app:manifestShieldBaselineRelease", "--configuration-cache")
+            assertThat(invalidated.output).doesNotContain("Reusing configuration cache")
+
+            val baseline2 = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline2).doesNotContain("InternalService")
+        }
+    }
 }

@@ -44,6 +44,9 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
     @get:Input
     abstract val shouldBaseline: Property<Boolean>
 
+    @get:Input
+    abstract val pluginVersion: Property<String>
+
     abstract override val guardUsesSdk: Property<Boolean>
     abstract override val guardUsesPermission: Property<Boolean>
     abstract override val guardUsesPermissionSdk23: Property<Boolean>
@@ -248,6 +251,7 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         this.configurationName.set(config.configurationName)
         this.projectPath.set(projectPath)
         this.shouldBaseline.set(shouldBaseline)
+        this.pluginVersion.set(ManifestShieldPlugin.VERSION)
         applyConfig(config)
         this.baselineDir.set(baselineDirectory)
         this.filePrefix.set(filePrefix)
