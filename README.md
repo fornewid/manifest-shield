@@ -32,10 +32,7 @@ plugins {
 }
 
 manifestShield {
-    configuration("release") {
-        sources = true       // Enable source-attributed format
-        metaData = true      // Opt-in to track <meta-data>
-    }
+    configuration("release")
 }
 ```
 
@@ -49,8 +46,7 @@ This creates baseline files in the `manifestShield/` directory:
 
 ```
 manifestShield/
-├── releaseAndroidManifest.txt
-└── releaseAndroidManifest.sources.txt   # when sources = true
+└── releaseAndroidManifest.txt
 ```
 
 ### Step 3: Detect changes
@@ -93,7 +89,15 @@ service:
 
 Permission attributes (`android:permission`, `android:readPermission`, `android:writePermission`) are shown as indented lines below exported components.
 
-**releaseAndroidManifest.sources.txt** — grouped by source module/library (when `sources = true`):
+**releaseAndroidManifest.sources.txt** — grouped by source module/library, generated when `sources = true`:
+
+```kotlin
+manifestShield {
+    configuration("release") {
+        sources = true
+    }
+}
+```
 
 ```
 [:sample:app]
@@ -116,19 +120,33 @@ Empty categories are omitted from the output.
 
 ## Configuration
 
+```kotlin
+manifestShield {
+    configuration("release") {
+        // Enable additional categories
+        metaData = true
+        intentFilter = true
+
+        // Disable default categories
+        exportedOnly = false
+        requiredOnly = false
+    }
+}
+```
+
 | Option | Default | Description |
 |--------|---------|-------------|
 | `baselineDir` | `"manifestShield"` | Directory name for baseline files |
 | `sources` | `false` | Enable source-attributed format grouped by library/module |
-| `sdk` | `false` | Shield `<uses-sdk>` |
-| `permissions` | **`true`** | Shield `<uses-permission>` |
+| `usesSdk` | `false` | Shield `<uses-sdk>` |
+| `usesPermission` | **`true`** | Shield `<uses-permission>` |
 | `permission` | `false` | Shield `<permission>` |
-| `features` | **`true`** | Shield `<uses-feature>` |
-| `activities` | **`true`** | Shield `<activity>` |
+| `usesFeature` | **`true`** | Shield `<uses-feature>` |
+| `activity` | **`true`** | Shield `<activity>` |
 | `activityAlias` | **`true`** | Shield `<activity-alias>` |
-| `services` | **`true`** | Shield `<service>` |
-| `receivers` | **`true`** | Shield `<receiver>` |
-| `providers` | **`true`** | Shield `<provider>` |
+| `service` | **`true`** | Shield `<service>` |
+| `receiver` | **`true`** | Shield `<receiver>` |
+| `provider` | **`true`** | Shield `<provider>` |
 | `intentFilter` | `false` | Shield `<intent-filter>` on components |
 | `startup` | **`true`** | Shield `androidx.startup` initializers |
 | `usesPermissionSdk23` | `false` | Shield `<uses-permission-sdk-23>` |
@@ -144,10 +162,22 @@ Empty categories are omitted from the output.
 | `exportedOnly` | **`true`** | Only include exported components in baseline |
 | `requiredOnly` | **`true`** | Only include required `<uses-feature>` and `<uses-library>` entries |
 
+The following manifest elements are **not tracked** by this plugin:
+
+- `<permission-group>`, `<permission-tree>` — rarely used in practice
+- `<instrumentation>` — test-only, not present in release builds
+- `<property>` — Android 12+ element, may be supported in a future version
+
 ## Requirements
 
 - Android Gradle Plugin 8.0.0+
 - Gradle 8.0+
+
+## AI Agent Guide
+
+If you use an AI coding assistant (Claude Code, Copilot, Gemini, Cursor, etc.),
+reference the [setup guide](docs/setup-guide.md.txt) for accurate installation
+instructions and common pitfalls.
 
 ## Acknowledgements
 
