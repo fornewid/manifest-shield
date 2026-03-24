@@ -57,7 +57,7 @@ manifestShield/
 
 If the merged manifest differs from the baseline, the build fails:
 
-```
+```diff
 Manifest Changed in :app for release/list
 - android.permission.WRITE_EXTERNAL_STORAGE
 + android.permission.WRITE_EXTERNAL_STORAGE (maxSdkVersion=28)
