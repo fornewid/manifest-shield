@@ -25,7 +25,7 @@ Using Version Catalog (`libs.versions.toml`):
 
     // module/build.gradle.kts
     plugins {
-        id("com.android.application") // or library, dynamic-feature
+        id("com.android.application")
         alias(libs.plugins.manifest.shield)
     }
 
@@ -158,10 +158,10 @@ alternative names.
    `permission` (guards `<permission>` declaration tags).
 5. The baseline file (`manifestShield/releaseAndroidManifest.txt`) should be
    committed to version control.
-6. The plugin supports `com.android.application`, `com.android.library`, and
-   `com.android.dynamic-feature` modules. Apply it to each module individually.
-7. Do NOT apply the plugin in the root `build.gradle.kts`. It requires AGP's
-   variant API, which is only available in Android module builds.
+6. The plugin only supports `com.android.application` modules. Library modules
+   produce incomplete baselines (missing transitive dependency manifests) due to
+   AGP's manifest merge design. Do NOT apply to library or dynamic-feature modules.
+7. Do NOT apply the plugin in the root `build.gradle.kts`.
 
 ## Not tracked
 

@@ -34,13 +34,13 @@ JAVA_HOME="/path/to/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew ...
 
 ## Architecture
 
-This is a Gradle plugin (`io.github.fornewid.manifest-shield`) that detects unintentional changes to Android's merged `AndroidManifest.xml`.
+This is a Gradle plugin (`io.github.fornewid.manifest-shield`) that detects unintentional changes to Android's merged `AndroidManifest.xml`. Only `com.android.application` modules are supported — library modules produce incomplete baselines due to AGP's manifest merge design.
 
 ### Module Structure
 
 - `manifest-shield/` — The publishable Gradle plugin (included build)
 - `sample/app/` — Android app demonstrating the plugin
-- `sample/module1/` — Android library with its own manifest (tests multi-module attribution)
+- `sample/module1/` — Android library (dependency of app, used for multi-module source attribution)
 
 ### Key Components
 

@@ -45,15 +45,10 @@ public class ManifestShieldPlugin : Plugin<Project> {
             description = "Save current manifest as baseline"
         }
 
-        // AGP types are loaded lazily via AndroidVariantHandler to avoid
-        // classloader isolation issues with GradleRunner TestKit.
+        // Only application modules produce a fully merged manifest that includes
+        // all transitive dependency manifests. Library modules only merge their own
+        // manifest with direct dependencies, making their baselines incomplete.
         target.pluginManager.withPlugin("com.android.application") {
-            AndroidVariantHandler.configureVariants(target, extension, guardTask, baselineTask)
-        }
-        target.pluginManager.withPlugin("com.android.library") {
-            AndroidVariantHandler.configureVariants(target, extension, guardTask, baselineTask)
-        }
-        target.pluginManager.withPlugin("com.android.dynamic-feature") {
             AndroidVariantHandler.configureVariants(target, extension, guardTask, baselineTask)
         }
 
