@@ -27,7 +27,7 @@ Add the plugin to your module's `build.gradle.kts`:
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("com.android.application") // or id("com.android.library")
+    id("com.android.application")
     id("io.github.fornewid.manifest-shield") version "<latest-version>"
 }
 
