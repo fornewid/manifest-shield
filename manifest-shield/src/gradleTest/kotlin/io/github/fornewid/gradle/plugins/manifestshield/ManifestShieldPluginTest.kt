@@ -1121,4 +1121,53 @@ internal class ManifestShieldPluginTest {
             assertThat(baseline2).doesNotContain("InternalService")
         }
     }
+
+    @Test
+    fun `unmatched configuration fails with available variants`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("nonExistent")
+            }
+        """.trimIndent()
+
+        AndroidProject(
+            pluginConfig = pluginConfig,
+        ).use { project ->
+            val result = buildAndFail(project, ":app:manifestShieldBaseline")
+            assertThat(result.output).contains("could not resolve configuration \"nonExistent\"")
+            assertThat(result.output).contains("configuration(\"release\")")
+            assertThat(result.output).contains("configuration(\"debug\")")
+        }
+    }
+
+    @Test
+    fun `sources works with multi-word variant using product flavors`() {
+        val androidExtra = """
+            flavorDimensions "environment"
+            productFlavors {
+                dev {
+                    dimension "environment"
+                }
+            }
+        """.trimIndent()
+
+        val pluginConfig = """
+            manifestShield {
+                configuration("devDebug") {
+                    sources = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(
+            pluginConfig = pluginConfig,
+            androidExtra = androidExtra,
+        ).use { project ->
+            val result = build(project, ":app:manifestShieldBaselineDevDebug")
+            assertThat(result.output).contains("Manifest Shield baseline created")
+
+            val sources = project.readBaselineFile("manifestShield/devDebugAndroidManifest.sources.txt")
+            assertThat(sources).isNotNull()
+        }
+    }
 }
