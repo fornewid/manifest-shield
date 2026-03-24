@@ -1,7 +1,4 @@
 [:sample:app]
-uses-feature:
-  android.hardware.camera
-
 uses-permission:
   android.permission.INTERNET
 
