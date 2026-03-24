@@ -25,11 +25,28 @@ internal object AndroidVariantHandler {
         baselineTask: TaskProvider<*>,
     ) {
         val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
+        val matchedConfigs = mutableSetOf<String>()
+        val allVariantNames = mutableListOf<String>()
 
         androidComponents.onVariants { variant ->
+            allVariantNames.add(variant.name)
             extension.configurations.configureEach {
-                if (configurationName == variant.name) {
+                val variantName = variant.name
+                if (configurationName == variantName || configurationName == variantName.toKebabCase()) {
+                    matchedConfigs.add(configurationName)
                     registerTasks(project, extension.baselineDir.get(), this, variant, guardTask, baselineTask)
+                }
+            }
+        }
+
+        project.afterEvaluate {
+            extension.configurations.configureEach {
+                if (configurationName !in matchedConfigs) {
+                    val available = allVariantNames.map { it.toKebabCase() }
+                    project.logger.warn(
+                        "Manifest Shield: Configuration \"$configurationName\" does not match any build variant.\n" +
+                            "Available variants: $available"
+                    )
                 }
             }
         }
@@ -38,6 +55,22 @@ internal object AndroidVariantHandler {
     @Suppress("DEPRECATION")
     private fun String.capitalize(): String {
         return if (isEmpty()) "" else get(0).toUpperCase() + substring(1)
+    }
+
+    /**
+     * Converts a camelCase string to kebab-case.
+     * e.g., "devRelease" -> "dev-release", "release" -> "release"
+     */
+    internal fun String.toKebabCase(): String {
+        return replace(Regex("([a-z])([A-Z])"), "$1-$2").lowercase()
+    }
+
+    /**
+     * Converts a kebab-case string to camelCase.
+     * e.g., "dev-release" -> "devRelease", "release" -> "release"
+     */
+    private fun String.toCamelCase(): String {
+        return split("-").joinToString("") { it.capitalize() }.replaceFirstChar { it.lowercase() }
     }
 
     private fun registerTasks(
@@ -49,11 +82,13 @@ internal object AndroidVariantHandler {
         baselineTask: TaskProvider<*>,
     ) {
         val mergedManifest = variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
-        val capitalizedName = config.configurationName.capitalize()
+        val variantCamelCase = variant.name
+        val variantKebabCase = variantCamelCase.toKebabCase()
+        val capitalizedName = variantCamelCase.capitalize()
         val baselineDirectory = OutputFileUtils.manifestShieldDir(project, baselineDir)
-        val filePrefix = "${config.configurationName}AndroidManifest"
+        val filePrefix = "${variantCamelCase}AndroidManifest"
         val blameLogProvider = project.layout.buildDirectory
-            .file("outputs/logs/manifest-merger-${config.configurationName}-report.txt")
+            .file("outputs/logs/manifest-merger-${variantKebabCase}-report.txt")
 
         val perConfigGuardTask = project.tasks.register(
             "manifestShield$capitalizedName",

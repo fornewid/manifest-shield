@@ -1121,4 +1121,69 @@ internal class ManifestShieldPluginTest {
             assertThat(baseline2).doesNotContain("InternalService")
         }
     }
+
+    @Test
+    fun `sources works with multi-word variant using product flavors`() {
+        val androidExtra = """
+            flavorDimensions "environment"
+            productFlavors {
+                dev {
+                    dimension "environment"
+                }
+            }
+        """.trimIndent()
+
+        val pluginConfig = """
+            manifestShield {
+                configuration("devDebug") {
+                    sources = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(
+            pluginConfig = pluginConfig,
+            androidExtra = androidExtra,
+        ).use { project ->
+            val result = build(project, ":app:manifestShieldBaselineDevDebug")
+            assertThat(result.output).contains("Manifest Shield baseline created")
+
+            val sources = project.readBaselineFile("manifestShield/devDebugAndroidManifest.sources.txt")
+            assertThat(sources).isNotNull()
+        }
+    }
+
+    @Test
+    fun `kebab-case configuration name matches variant`() {
+        val androidExtra = """
+            flavorDimensions "environment"
+            productFlavors {
+                dev {
+                    dimension "environment"
+                }
+            }
+        """.trimIndent()
+
+        val pluginConfig = """
+            manifestShield {
+                configuration("dev-debug") {
+                    sources = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(
+            pluginConfig = pluginConfig,
+            androidExtra = androidExtra,
+        ).use { project ->
+            val result = build(project, ":app:manifestShieldBaselineDevDebug")
+            assertThat(result.output).contains("Manifest Shield baseline created")
+
+            val txt = project.readBaselineFile("manifestShield/devDebugAndroidManifest.txt")
+            assertThat(txt).isNotNull()
+
+            val sources = project.readBaselineFile("manifestShield/devDebugAndroidManifest.sources.txt")
+            assertThat(sources).isNotNull()
+        }
+    }
 }
