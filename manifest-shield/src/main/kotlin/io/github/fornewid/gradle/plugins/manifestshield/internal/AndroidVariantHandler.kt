@@ -8,6 +8,7 @@ import io.github.fornewid.gradle.plugins.manifestshield.ManifestShieldPluginExte
 import io.github.fornewid.gradle.plugins.manifestshield.internal.list.ManifestShieldListTask
 import io.github.fornewid.gradle.plugins.manifestshield.internal.sources.ManifestSourcesDiffTask
 import io.github.fornewid.gradle.plugins.manifestshield.internal.utils.OutputFileUtils
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 
@@ -33,6 +34,30 @@ internal object AndroidVariantHandler {
                 }
             }
         }
+
+        val validateConfigurations: () -> Unit = {
+            extension.configurations.forEach { config ->
+                val probeConfigName = "${config.configurationName}RuntimeClasspath"
+                if (project.configurations.findByName(probeConfigName) == null) {
+                    val availableVariants = project.configurations.names
+                        .filter { it.endsWith("RuntimeClasspath") }
+                        .map { it.removeSuffix("RuntimeClasspath") }
+                    throw GradleException(buildString {
+                        appendLine("Manifest Shield could not resolve configuration \"${config.configurationName}\".")
+                        if (availableVariants.isNotEmpty()) {
+                            appendLine("Here are some valid configurations you could use.")
+                            appendLine()
+                            appendLine("manifestShield {")
+                            availableVariants.forEach { appendLine("    configuration(\"$it\")") }
+                            appendLine("}")
+                        }
+                    })
+                }
+            }
+        }
+
+        guardTask.configure { doFirst { validateConfigurations() } }
+        baselineTask.configure { doFirst { validateConfigurations() } }
     }
 
     @Suppress("DEPRECATION")

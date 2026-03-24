@@ -1123,6 +1123,24 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
+    fun `unmatched configuration fails with available variants`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("nonExistent")
+            }
+        """.trimIndent()
+
+        AndroidProject(
+            pluginConfig = pluginConfig,
+        ).use { project ->
+            val result = buildAndFail(project, ":app:manifestShieldBaseline")
+            assertThat(result.output).contains("could not resolve configuration \"nonExistent\"")
+            assertThat(result.output).contains("configuration(\"release\")")
+            assertThat(result.output).contains("configuration(\"debug\")")
+        }
+    }
+
+    @Test
     fun `sources works with multi-word variant using product flavors`() {
         val androidExtra = """
             flavorDimensions "environment"
