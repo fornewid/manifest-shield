@@ -40,6 +40,15 @@ internal object AndroidVariantHandler {
         return if (isEmpty()) "" else get(0).toUpperCase() + substring(1)
     }
 
+    /**
+     * Converts a camelCase string to kebab-case.
+     * AGP generates blame report files using this format.
+     * e.g., "devRelease" -> "dev-release", "release" -> "release", "dev2Debug" -> "dev2-debug"
+     */
+    internal fun String.toKebabCase(): String {
+        return replace(Regex("([a-z0-9])([A-Z])"), "$1-$2").lowercase()
+    }
+
     private fun registerTasks(
         project: Project,
         baselineDir: String,
@@ -53,7 +62,7 @@ internal object AndroidVariantHandler {
         val baselineDirectory = OutputFileUtils.manifestShieldDir(project, baselineDir)
         val filePrefix = "${config.configurationName}AndroidManifest"
         val blameLogProvider = project.layout.buildDirectory
-            .file("outputs/logs/manifest-merger-${config.configurationName}-report.txt")
+            .file("outputs/logs/manifest-merger-${config.configurationName.toKebabCase()}-report.txt")
 
         val perConfigGuardTask = project.tasks.register(
             "manifestShield$capitalizedName",

@@ -6,6 +6,7 @@ import java.util.UUID
 internal class AndroidProject(
     private val manifestContent: String = DEFAULT_MANIFEST,
     private val pluginConfig: String = DEFAULT_PLUGIN_CONFIG,
+    private val androidExtra: String = "",
 ) : AutoCloseable {
 
     val dir: File = File("build/gradleTest/${UUID.randomUUID()}").apply { mkdirs() }
@@ -76,6 +77,7 @@ internal class AndroidProject(
                     minSdk 23
                     targetSdk 34
                 }
+                $androidExtra
             }
 
             $pluginConfig
