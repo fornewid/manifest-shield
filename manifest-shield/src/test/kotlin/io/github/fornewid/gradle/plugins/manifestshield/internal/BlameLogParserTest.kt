@@ -123,15 +123,16 @@ internal class BlameLogParserTest {
         }
         assertThat(firebaseService.source).isEqualTo("com.google.firebase:firebase-common:20.0.0")
 
-        // INJECTED with reason: suffix
+        // Elements without a name (like uses-sdk) are skipped by the parser
         val sdk = entries.filter { it.elementType == "uses-sdk" }
-        assertThat(sdk).isEmpty() // uses-sdk has no elementName, skipped
+        assertThat(sdk).isEmpty()
 
-        // IMPLIED action
-        val mainActivity = entries.first {
+        // Both ADDED and IMPLIED actions for MainActivity should be parsed
+        val mainActivityEntries = entries.filter {
             it.elementType == "activity" && it.elementName == "com.example.app.MainActivity"
         }
-        assertThat(mainActivity.source).isEqualTo(":app")
+        assertThat(mainActivityEntries).hasSize(2)
+        assertThat(mainActivityEntries.map { it.source }).containsExactly(":app", ":app")
     }
 
     @Test
