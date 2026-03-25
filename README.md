@@ -162,6 +162,10 @@ manifestShield {
 | `exportedOnly` | **`true`** | Only include exported components in baseline |
 | `requiredOnly` | **`true`** | Only include required `<uses-feature>` and `<uses-library>` entries |
 
+**Note on `exportedOnly`**: Starting with Android 12, components with `<intent-filter>` must explicitly declare `android:exported`. When `exportedOnly = true` (default), only components with `android:exported="true"` are included — components without the attribute are excluded. This aligns with Android 12+ requirements where all intent-filter components must be explicit.
+
+**Note on `intentFilter`**: Intent-filters are never merged between manifests — each source's intent-filter is added independently. When `intentFilter = true`, changes from any dependency update that modifies intent-filters will appear in the baseline diff.
+
 The following manifest elements are **not tracked** by this plugin:
 
 - `<permission-group>`, `<permission-tree>` — rarely used in practice
