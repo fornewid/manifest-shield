@@ -22,10 +22,10 @@ Based on the [App Manifest](https://developer.android.com/guide/topics/manifest/
 
 ### Step 1: Apply the plugin
 
-Add the plugin to your module's `build.gradle.kts`:
+Add the plugin to your **application** module's `build.gradle.kts` (library modules are not supported):
 
 ```kotlin
-// build.gradle.kts
+// app/build.gradle.kts
 plugins {
     id("com.android.application")
     id("io.github.fornewid.manifest-shield") version "<latest-version>"
