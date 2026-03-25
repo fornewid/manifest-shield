@@ -113,4 +113,27 @@ internal class BlameLogParserTest {
         }
         assertThat(internetPermission.source).startsWith("/path/to/app/src/main/")
     }
+
+    @Test
+    fun `parse handles file paths with spaces`() {
+        val spacesBlameLog = File(javaClass.classLoader.getResource("test-blame-log-spaces.txt")!!.toURI())
+        val spacesProjectDir = File("/Users/John Doe/My Projects")
+        val entries = BlameLogParser.parse(spacesBlameLog, spacesProjectDir)
+
+        val internetPermission = entries.filter {
+            it.elementType == "uses-permission" && it.elementName == "android.permission.INTERNET"
+        }
+        assertThat(internetPermission).hasSize(2)
+        assertThat(internetPermission.map { it.source }).containsExactly(":app", ":module1")
+
+        val cameraPermission = entries.first {
+            it.elementType == "uses-permission" && it.elementName == "android.permission.CAMERA"
+        }
+        assertThat(cameraPermission.source).isEqualTo("com.google.firebase:firebase-core:21.0.0")
+
+        val mainActivity = entries.first {
+            it.elementType == "activity" && it.elementName == "com.example.app.MainActivity"
+        }
+        assertThat(mainActivity.source).isEqualTo(":app")
+    }
 }

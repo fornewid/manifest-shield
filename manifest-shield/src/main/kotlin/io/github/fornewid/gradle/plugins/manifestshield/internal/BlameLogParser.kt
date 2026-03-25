@@ -17,8 +17,9 @@ internal object BlameLogParser {
 
     // Matches action lines: ADDED/INJECTED/MERGED/IMPLIED/CONVERTED from [source] /path
     // REJECTED is excluded as rejected elements are not in the final merged manifest.
-    private val ACTION_FROM_BRACKETED = Regex("""\s*(?:ADDED|INJECTED|MERGED|IMPLIED|CONVERTED) from \[(.+?)] (/\S+)""")
-    private val ACTION_FROM_PATH = Regex("""\s*(?:ADDED|INJECTED|MERGED|IMPLIED|CONVERTED) from (/\S+?)(?::\d|$| reason:)""")
+    // Paths may contain spaces (e.g., /Users/John Doe/...) so we match until :digit or end-of-line.
+    private val ACTION_FROM_BRACKETED = Regex("""\s*(?:ADDED|INJECTED|MERGED|IMPLIED|CONVERTED) from \[(.+?)] (.+?)(?::\d|$)""")
+    private val ACTION_FROM_PATH = Regex("""\s*(?:ADDED|INJECTED|MERGED|IMPLIED|CONVERTED) from (.+?)(?::\d|$| reason:)""")
 
     fun parse(blameLogFile: File, projectDir: File? = null): List<BlameEntry> {
         if (!blameLogFile.exists()) return emptyList()
