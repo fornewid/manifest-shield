@@ -1,0 +1,10 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/John Doe/My Projects/app/src/main/AndroidManifest.xml:1:1
+uses-permission#android.permission.INTERNET
+ADDED from /Users/John Doe/My Projects/app/src/main/AndroidManifest.xml:5:5
+MERGED from [:module1] /Users/John Doe/My Projects/module1/src/main/AndroidManifest.xml:4:5
+uses-permission#android.permission.CAMERA
+ADDED from [com.google.firebase:firebase-core:21.0.0] /Users/John Doe/.gradle/caches/modules/AndroidManifest.xml:4:5
+activity#com.example.app.MainActivity
+ADDED from /Users/John Doe/My Projects/app/src/main/AndroidManifest.xml:10:9
