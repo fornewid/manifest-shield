@@ -1,0 +1,18 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:2:1-23:12
+INJECTED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:2:1-23:12
+MERGED from [:module1] /Users/dev/MyApp/module1/build/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:2:1-10:12
+MERGED from [androidx.activity:activity:1.4.0] /Users/dev/.gradle/caches/8.10.2/transforms/abc123/transformed/activity-1.4.0/AndroidManifest.xml:17:1-24:12
+	package
+		INJECTED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml
+uses-sdk
+INJECTED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+uses-permission#android.permission.INTERNET
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:4:5-67
+MERGED from [:module1] /Users/dev/MyApp/module1/build/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:7:5-67
+activity#com.example.app.MainActivity
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:10:9-20:16
+IMPLIED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:10:9-20:16 reason: org.example has a targetSdkVersion < 4
+service#com.google.firebase.components.ComponentDiscoveryService
+ADDED from [com.google.firebase:firebase-common:20.0.0] /Users/dev/.gradle/caches/8.10.2/transforms/def456/transformed/firebase-common-20.0.0/AndroidManifest.xml:15:9-25:20

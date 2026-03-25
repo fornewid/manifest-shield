@@ -113,6 +113,15 @@ Example with opt-in features:
         }
     }
 
+## Important notes
+
+- `exportedOnly = true` (default) only includes components with explicit
+  `android:exported="true"`. On Android 12+, all components with intent-filters
+  must set this attribute — components without it are excluded from the baseline.
+- Intent-filters are never merged between manifests by AGP. Each dependency's
+  intent-filters are added independently. Enable `intentFilter = true` to track
+  these changes.
+
 ## Filtering options
 
 These options are `true` by default and control what appears in the baseline:

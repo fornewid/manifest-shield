@@ -105,6 +105,37 @@ internal class BlameLogParserTest {
     }
 
     @Test
+    fun `parse handles real AGP 8 blame log format`() {
+        val agp8BlameLog = File(javaClass.classLoader.getResource("test-blame-log-agp8.txt")!!.toURI())
+        val agp8ProjectDir = File("/Users/dev/MyApp")
+        val entries = BlameLogParser.parse(agp8BlameLog, agp8ProjectDir)
+
+        // ADDED with range format (2:1-23:12)
+        val internet = entries.filter {
+            it.elementType == "uses-permission" && it.elementName == "android.permission.INTERNET"
+        }
+        assertThat(internet).hasSize(2)
+        assertThat(internet.map { it.source }).containsExactly(":app", ":module1")
+
+        // Library source with gradle cache path
+        val firebaseService = entries.first {
+            it.elementType == "service" && it.elementName == "com.google.firebase.components.ComponentDiscoveryService"
+        }
+        assertThat(firebaseService.source).isEqualTo("com.google.firebase:firebase-common:20.0.0")
+
+        // Elements without a name (like uses-sdk) are skipped by the parser
+        val sdk = entries.filter { it.elementType == "uses-sdk" }
+        assertThat(sdk).isEmpty()
+
+        // Both ADDED and IMPLIED actions for MainActivity should be parsed
+        val mainActivityEntries = entries.filter {
+            it.elementType == "activity" && it.elementName == "com.example.app.MainActivity"
+        }
+        assertThat(mainActivityEntries).hasSize(2)
+        assertThat(mainActivityEntries.map { it.source }).containsExactly(":app", ":app")
+    }
+
+    @Test
     fun `parse without projectDir uses raw file path as source`() {
         val entries = BlameLogParser.parse(blameLogFile)
 
