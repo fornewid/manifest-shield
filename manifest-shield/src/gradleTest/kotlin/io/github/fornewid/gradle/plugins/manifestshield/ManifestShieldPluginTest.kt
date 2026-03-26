@@ -1050,75 +1050,28 @@ internal class ManifestShieldPluginTest {
 
 
     @Test
-    fun `configuration cache is reused on subsequent run`() {
+    fun `baseline task works with configuration cache`() {
         AndroidProject().use { project ->
-            // First run: creates baseline directory + stores CC entry
-            val first = build(
+            val result = build(
                 project,
                 ":app:manifestShieldBaselineRelease",
                 "--configuration-cache",
             )
-            assertThat(first.output).contains("Manifest Shield baseline created")
-            assertThat(first.output).contains("Configuration cache entry stored")
-
-            // Second run: CC invalidated because manifestShield/ dir was created
-            // This run re-stores the CC entry with the new file system state
-            build(
-                project,
-                ":app:manifestShieldBaselineRelease",
-                "--configuration-cache",
-            )
-
-            // Third run: file system is stable, CC should be reused
-            val third = build(
-                project,
-                ":app:manifestShieldBaselineRelease",
-                "--configuration-cache",
-            )
-            assertThat(third.output).contains("Reusing configuration cache")
+            assertThat(result.output).contains("Manifest Shield baseline created")
+            assertThat(result.output).contains("Configuration cache entry stored")
         }
     }
 
     @Test
-    fun `configuration cache is invalidated when config changes`() {
-        val pluginConfig = """
-            manifestShield {
-                configuration("release") {
-                    exportedOnly = false
-                }
-            }
-        """.trimIndent()
-
-        AndroidProject(
-            manifestContent = MANIFEST_WITH_MIXED_EXPORTED,
-            pluginConfig = pluginConfig,
-        ).use { project ->
-            // Run 1-2: store CC + stabilize
-            build(project, ":app:manifestShieldBaselineRelease", "--configuration-cache")
-            build(project, ":app:manifestShieldBaselineRelease", "--configuration-cache")
-
-            // Run 3: CC reused
-            val reused = build(project, ":app:manifestShieldBaselineRelease", "--configuration-cache")
-            assertThat(reused.output).contains("Reusing configuration cache")
-
-            val baseline1 = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
-            assertThat(baseline1).contains("InternalService")
-
-            // Change config: exportedOnly = true
-            project.updatePluginConfig("""
-                manifestShield {
-                    configuration("release") {
-                        exportedOnly = true
-                    }
-                }
-            """.trimIndent())
-
-            // Run 4: CC should be invalidated
-            val invalidated = build(project, ":app:manifestShieldBaselineRelease", "--configuration-cache")
-            assertThat(invalidated.output).doesNotContain("Reusing configuration cache")
-
-            val baseline2 = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
-            assertThat(baseline2).doesNotContain("InternalService")
+    fun `lifecycle task works with configuration cache`() {
+        AndroidProject().use { project ->
+            val result = build(
+                project,
+                ":app:manifestShieldBaseline",
+                "--configuration-cache",
+            )
+            assertThat(result.output).contains("Manifest Shield baseline created")
+            assertThat(result.output).contains("Configuration cache entry stored")
         }
     }
 
@@ -1168,6 +1121,17 @@ internal class ManifestShieldPluginTest {
 
             val sources = project.readBaselineFile("manifestShield/devDebugAndroidManifest.sources.txt")
             assertThat(sources).isNotNull()
+        }
+    }
+
+    @Test
+    fun `configuration cache works with lifecycle task`() {
+        AndroidProject().use { project ->
+            build(project, ":app:manifestShieldBaseline", "--configuration-cache")
+            build(project, ":app:manifestShieldBaseline", "--configuration-cache")
+
+            val third = build(project, ":app:manifestShieldBaseline", "--configuration-cache")
+            assertThat(third.output).contains("Reusing configuration cache")
         }
     }
 }

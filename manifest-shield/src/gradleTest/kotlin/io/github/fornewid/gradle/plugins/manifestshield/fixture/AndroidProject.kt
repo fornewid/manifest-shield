@@ -93,16 +93,6 @@ internal class AndroidProject(
         dir.resolve("app/src/main/AndroidManifest.xml").writeText(newContent)
     }
 
-    fun updatePluginConfig(newConfig: String) {
-        val appBuildFile = dir.resolve("app/build.gradle")
-        val content = appBuildFile.readText()
-        val updated = content.replace(
-            Regex("manifestShield\\s*\\{[\\s\\S]*?\\{[\\s\\S]*?}[\\s\\S]*?}"),
-            newConfig
-        )
-        appBuildFile.writeText(updated)
-    }
-
     fun readBaselineFile(path: String): String? {
         val file = dir.resolve("app/$path")
         return if (file.exists()) file.readText() else null

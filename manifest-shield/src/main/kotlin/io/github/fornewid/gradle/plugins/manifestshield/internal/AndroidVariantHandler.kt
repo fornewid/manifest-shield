@@ -27,37 +27,51 @@ internal object AndroidVariantHandler {
     ) {
         val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
 
+        // Track all variant names, declared config names, and which matched.
+        val allVariantNames = mutableSetOf<String>()
+        val declaredConfigNames = mutableSetOf<String>()
+        val matchedConfigs = mutableSetOf<String>()
+
         androidComponents.onVariants { variant ->
+            allVariantNames.add(variant.name)
             extension.configurations.configureEach {
+                declaredConfigNames.add(configurationName)
                 if (configurationName == variant.name) {
+                    matchedConfigs.add(configurationName)
                     registerTasks(project, extension.baselineDir.get(), this, variant, guardTask, baselineTask)
                 }
             }
         }
 
-        val validateConfigurations: () -> Unit = {
-            extension.configurations.forEach { config ->
-                val probeConfigName = "${config.configurationName}RuntimeClasspath"
-                if (project.configurations.findByName(probeConfigName) == null) {
-                    val availableVariants = project.configurations.names
-                        .filter { it.endsWith("RuntimeClasspath") }
-                        .map { it.removeSuffix("RuntimeClasspath") }
-                    throw GradleException(buildString {
-                        appendLine("Manifest Shield could not resolve configuration \"${config.configurationName}\".")
-                        if (availableVariants.isNotEmpty()) {
-                            appendLine("Here are some valid configurations you could use.")
-                            appendLine()
-                            appendLine("manifestShield {")
-                            availableVariants.forEach { appendLine("    configuration(\"$it\")") }
-                            appendLine("}")
-                        }
-                    })
-                }
+        // Validate at task configuration time (not doFirst) — CC-safe.
+        // Only plain String sets are referenced — no extension or project objects.
+        guardTask.configure {
+            validateConfigurations(declaredConfigNames, matchedConfigs, allVariantNames)
+        }
+        baselineTask.configure {
+            validateConfigurations(declaredConfigNames, matchedConfigs, allVariantNames)
+        }
+    }
+
+    private fun validateConfigurations(
+        declaredConfigNames: Set<String>,
+        matchedConfigs: Set<String>,
+        allVariantNames: Set<String>,
+    ) {
+        for (name in declaredConfigNames) {
+            if (name !in matchedConfigs) {
+                throw GradleException(buildString {
+                    appendLine("Manifest Shield could not resolve configuration \"$name\".")
+                    if (allVariantNames.isNotEmpty()) {
+                        appendLine("Here are some valid configurations you could use.")
+                        appendLine()
+                        appendLine("manifestShield {")
+                        allVariantNames.forEach { appendLine("    configuration(\"$it\")") }
+                        appendLine("}")
+                    }
+                })
             }
         }
-
-        guardTask.configure { doFirst { validateConfigurations() } }
-        baselineTask.configure { doFirst { validateConfigurations() } }
     }
 
     @Suppress("DEPRECATION")
