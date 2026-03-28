@@ -149,11 +149,10 @@ internal object SourcesContentBuilder {
         if (flags.usesPermissionSdk23 && manifest.usesPermissionSdk23.isNotEmpty()) addEntries("uses-permission-sdk-23", "uses-permission-sdk-23", manifest.usesPermissionSdk23)
         if (flags.permission && manifest.permission.isNotEmpty()) addEntries("permission", "permission", manifest.permission)
         if (flags.supportsGlTexture && manifest.supportsGlTextures.isNotEmpty()) addEntries("supports-gl-texture", "supports-gl-texture", manifest.supportsGlTextures)
-        fun filterComponents(components: List<ManifestComponent>): List<ManifestComponent> {
-            var result = if (flags.exportedOnly) components.filter { it.exported == true } else components
-            if (flags.unprotectedOnly) result = result.filter { !it.hasPermissionProtection() }
-            return result
-        }
+        fun filterComponents(components: List<ManifestComponent>): List<ManifestComponent> =
+            components
+                .filter { !flags.exportedOnly || it.exported == true }
+                .filter { !flags.unprotectedOnly || !it.hasPermissionProtection() }
 
         if (flags.activity) filterComponents(manifest.activity).let { if (it.isNotEmpty()) addEntries("activity", "activity", it, isComponent = true) }
         if (flags.activityAlias) filterComponents(manifest.activityAlias).let { if (it.isNotEmpty()) addEntries("activity-alias", "activity-alias", it, isComponent = true) }

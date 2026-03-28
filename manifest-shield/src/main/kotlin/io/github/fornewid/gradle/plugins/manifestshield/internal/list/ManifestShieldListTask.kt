@@ -182,8 +182,9 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         val filterExported = exportedOnly.get()
         val filterUnprotected = unprotectedOnly.get()
         fun componentLines(components: List<ManifestComponent>): List<String> {
-            var filtered = if (filterExported) components.filter { it.exported == true } else components
-            if (filterUnprotected) filtered = filtered.filter { !it.hasPermissionProtection() }
+            val filtered = components
+                .filter { !filterExported || it.exported == true }
+                .filter { !filterUnprotected || !it.hasPermissionProtection() }
             val lines = mutableListOf<String>()
             for (comp in filtered.sortedBy { it.name }) {
                 lines.add(comp.toBaselineString())
