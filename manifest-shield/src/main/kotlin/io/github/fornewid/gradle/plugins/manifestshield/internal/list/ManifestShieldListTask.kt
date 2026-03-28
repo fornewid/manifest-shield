@@ -5,6 +5,7 @@ import io.github.fornewid.gradle.plugins.manifestshield.ManifestShieldPlugin
 import io.github.fornewid.gradle.plugins.manifestshield.internal.ShieldFlags
 import io.github.fornewid.gradle.plugins.manifestshield.internal.ManifestExtraction
 import io.github.fornewid.gradle.plugins.manifestshield.internal.ManifestVisitor
+import io.github.fornewid.gradle.plugins.manifestshield.internal.STARTUP_PROVIDER_NAME
 import io.github.fornewid.gradle.plugins.manifestshield.internal.applyConfig
 import io.github.fornewid.gradle.plugins.manifestshield.internal.utils.ManifestListDiff
 import io.github.fornewid.gradle.plugins.manifestshield.internal.utils.ManifestListDiffResult
@@ -199,22 +200,17 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
             return lines
         }
 
-        if (guardActivity.get() && manifest.activity.isNotEmpty()) {
-            val lines = componentLines(manifest.activity)
-            if (lines.isNotEmpty()) sections.add(Section("activity", lines))
+        fun addComponentSection(tag: String, guard: Property<Boolean>, components: List<ManifestComponent>) {
+            if (guard.get() && components.isNotEmpty()) {
+                val lines = componentLines(components)
+                if (lines.isNotEmpty()) sections.add(Section(tag, lines))
+            }
         }
-        if (guardActivityAlias.get() && manifest.activityAlias.isNotEmpty()) {
-            val lines = componentLines(manifest.activityAlias)
-            if (lines.isNotEmpty()) sections.add(Section("activity-alias", lines))
-        }
-        if (guardService.get() && manifest.service.isNotEmpty()) {
-            val lines = componentLines(manifest.service)
-            if (lines.isNotEmpty()) sections.add(Section("service", lines))
-        }
-        if (guardReceiver.get() && manifest.receiver.isNotEmpty()) {
-            val lines = componentLines(manifest.receiver)
-            if (lines.isNotEmpty()) sections.add(Section("receiver", lines))
-        }
+
+        addComponentSection("activity", guardActivity, manifest.activity)
+        addComponentSection("activity-alias", guardActivityAlias, manifest.activityAlias)
+        addComponentSection("service", guardService, manifest.service)
+        addComponentSection("receiver", guardReceiver, manifest.receiver)
         if (guardMetaData.get() && manifest.metaData.isNotEmpty()) {
             sections.add(Section("meta-data", manifest.metaData.map { it.toBaselineString() }.sorted()))
         }
@@ -267,9 +263,5 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         this.filePrefix.set(filePrefix)
 
         declareCompatibilities()
-    }
-
-    private companion object {
-        const val STARTUP_PROVIDER_NAME = "androidx.startup.InitializationProvider"
     }
 }
