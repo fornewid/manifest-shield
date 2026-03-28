@@ -157,7 +157,14 @@ internal object SourcesContentBuilder {
         if (flags.metaData && manifest.metaData.isNotEmpty()) addEntries("meta-data", "meta-data", manifest.metaData)
         if (flags.service) filterComponents(manifest.service).let { if (it.isNotEmpty()) addEntries("service", "service", it, isComponent = true) }
         if (flags.receiver) filterComponents(manifest.receiver).let { if (it.isNotEmpty()) addEntries("receiver", "receiver", it, isComponent = true) }
-        if (flags.provider) filterComponents(manifest.provider).let { if (it.isNotEmpty()) addEntries("provider", "provider", it, isComponent = true) }
+        if (flags.provider) {
+            val providers = if (flags.startup) {
+                manifest.provider.filter { it.name != STARTUP_PROVIDER_NAME }
+            } else {
+                manifest.provider
+            }
+            filterComponents(providers).let { if (it.isNotEmpty()) addEntries("provider", "provider", it, isComponent = true) }
+        }
         val libList = filterRequired(manifest.usesLibraries) { it.required }
         if (flags.usesLibrary && libList.isNotEmpty()) addEntries("uses-library", "uses-library", libList)
         if (flags.usesNativeLibrary && manifest.usesNativeLibraries.isNotEmpty()) addEntries("uses-native-library", "uses-native-library", manifest.usesNativeLibraries)
@@ -241,4 +248,6 @@ internal object SourcesContentBuilder {
             }
         }
     }
+
+    private const val STARTUP_PROVIDER_NAME = "androidx.startup.InitializationProvider"
 }
