@@ -148,7 +148,7 @@ manifestShield {
 | `receiver` | **`true`** | Shield `<receiver>` |
 | `provider` | **`true`** | Shield `<provider>` |
 | `intentFilter` | `false` | Shield `<intent-filter>` on components |
-| `startup` | **`true`** | Shield `androidx.startup` initializers |
+| `startup` | `false` | Shield `androidx.startup` initializers |
 | `usesPermissionSdk23` | `false` | Shield `<uses-permission-sdk-23>` |
 | `supportsScreens` | `false` | Shield `<supports-screens>` |
 | `compatibleScreens` | `false` | Shield `<compatible-screens>` |

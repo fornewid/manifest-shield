@@ -60,7 +60,7 @@ public open class ManifestShieldConfiguration @Inject constructor(
 
     /** Guard androidx.startup initializer declarations */
     @get:Input
-    public var startup: Boolean = true
+    public var startup: Boolean = false
 
     /** Guard uses-permission-sdk-23 declarations */
     @get:Input
