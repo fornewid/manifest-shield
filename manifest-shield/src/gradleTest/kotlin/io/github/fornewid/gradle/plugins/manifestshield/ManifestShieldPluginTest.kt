@@ -660,8 +660,29 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
-    fun `baseline includes startup by default`() {
+    fun `baseline excludes startup by default`() {
         AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_STARTUP)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).doesNotContain("androidx.startup:")
+        }
+    }
+
+    @Test
+    fun `baseline includes startup when enabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    startup = true
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
             project.updateManifest(MANIFEST_WITH_STARTUP)
 
             build(project, ":app:manifestShieldBaselineRelease")
@@ -675,29 +696,16 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
-    fun `baseline excludes startup when disabled`() {
+    fun `baseline shows provider and startup sections when both exist`() {
         val pluginConfig = """
             manifestShield {
                 configuration("release") {
-                    startup = false
+                    startup = true
                 }
             }
         """.trimIndent()
 
         AndroidProject(pluginConfig = pluginConfig).use { project ->
-            project.updateManifest(MANIFEST_WITH_STARTUP)
-
-            build(project, ":app:manifestShieldBaselineRelease")
-
-            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
-            assertThat(baseline).isNotNull()
-            assertThat(baseline).doesNotContain("androidx.startup:")
-        }
-    }
-
-    @Test
-    fun `baseline shows provider and startup sections when both exist`() {
-        AndroidProject().use { project ->
             project.updateManifest(MANIFEST_WITH_PROVIDER_AND_STARTUP)
 
             build(project, ":app:manifestShieldBaselineRelease")

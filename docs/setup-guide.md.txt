@@ -78,7 +78,6 @@ The plugin guards the following by default (no configuration needed):
 - `<uses-permission>`
 - `<uses-feature>` (only `android:required="true"` entries)
 - `<activity>`, `<activity-alias>`, `<service>`, `<receiver>`, `<provider>` (only `android:exported="true"` components)
-- `androidx.startup` initializers
 - `android:permission` attributes on exported components
 
 **AI Agent**: These are ALREADY enabled. You MUST NOT include them in the
@@ -103,6 +102,7 @@ These are disabled by default. Only add them when the user requests:
 | `usesLibrary = true` | Track `<uses-library>` (only `android:required="true"` by default) |
 | `usesNativeLibrary = true` | Track `<uses-native-library>` |
 | `profileable = true` | Track `<profileable>` |
+| `startup = true` | Track `androidx.startup` initializer declarations |
 
 Example with opt-in features:
 
