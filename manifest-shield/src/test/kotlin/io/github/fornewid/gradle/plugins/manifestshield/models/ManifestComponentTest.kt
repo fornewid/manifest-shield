@@ -51,6 +51,39 @@ internal class ManifestComponentTest {
     }
 
     @Test
+    fun `hasPermissionProtection with no permissions`() {
+        val component = ManifestComponent(name = "com.example.MyActivity", type = ComponentType.ACTIVITY, exported = true)
+        assertThat(component.hasPermissionProtection()).isFalse()
+    }
+
+    @Test
+    fun `hasPermissionProtection with permission`() {
+        val component = ManifestComponent(
+            name = "com.example.MyService", type = ComponentType.SERVICE,
+            exported = true, permission = "android.permission.BIND_JOB_SERVICE",
+        )
+        assertThat(component.hasPermissionProtection()).isTrue()
+    }
+
+    @Test
+    fun `hasPermissionProtection with readPermission only`() {
+        val component = ManifestComponent(
+            name = "com.example.MyProvider", type = ComponentType.PROVIDER,
+            exported = true, readPermission = "android.permission.READ_CONTACTS",
+        )
+        assertThat(component.hasPermissionProtection()).isTrue()
+    }
+
+    @Test
+    fun `hasPermissionProtection with writePermission only`() {
+        val component = ManifestComponent(
+            name = "com.example.MyProvider", type = ComponentType.PROVIDER,
+            exported = true, writePermission = "android.permission.WRITE_CONTACTS",
+        )
+        assertThat(component.hasPermissionProtection()).isTrue()
+    }
+
+    @Test
     fun `permissionLines with exported and permission`() {
         val component = ManifestComponent(
             name = "com.example.MyService", type = ComponentType.SERVICE,

@@ -25,6 +25,10 @@ internal data class ManifestComponent(
         }
     }
 
+    /** Whether this component has any permission-based access control. */
+    fun hasPermissionProtection(): Boolean =
+        permission != null || readPermission != null || writePermission != null
+
     /** Permission lines for exported components (indented format). */
     fun permissionLines(): List<String> {
         if (exported != true) return emptyList()
