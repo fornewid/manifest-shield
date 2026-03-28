@@ -2,6 +2,7 @@ package io.github.fornewid.gradle.plugins.manifestshield.internal.utils
 
 import io.github.fornewid.gradle.plugins.manifestshield.internal.EnabledCategories
 import io.github.fornewid.gradle.plugins.manifestshield.internal.ManifestExtraction
+import io.github.fornewid.gradle.plugins.manifestshield.internal.STARTUP_PROVIDER_NAME
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestEntry
 
@@ -38,58 +39,6 @@ internal object SourcesContentBuilder {
                 appendLine("$source:")
                 grouped[source]?.sorted()?.forEach { line ->
                     appendLine("  $line")
-                }
-            }
-        }
-    }
-
-    /**
-     * Build merged tree content grouped by source, then by manifest/application level categories.
-     */
-    fun buildMerged(
-        categories: List<Triple<String, String, List<ManifestEntry>>>,
-        sourceMap: Map<String, List<String>>,
-    ): String {
-        val applicationLevel = listOf("activity", "activity-alias", "service", "receiver", "provider")
-
-        // Group: source → tag → list of entries
-        val sourceTagEntries = mutableMapOf<String, MutableMap<String, MutableList<String>>>()
-
-        for ((tag, elementType, entries) in categories) {
-            for (entry in entries) {
-                val key = "$elementType#${entry.name}"
-                val sources = sourceMap[key] ?: listOf("unknown")
-                val line = entry.toBaselineString()
-                for (source in sources) {
-                    sourceTagEntries
-                        .getOrPut(source) { mutableMapOf() }
-                        .getOrPut(tag) { mutableListOf() }
-                        .add(line)
-                }
-            }
-        }
-
-        val sortedSources = sourceTagEntries.keys.sorted().let { sources ->
-            val local = sources.filter { it.startsWith(":") }.sorted()
-            val external = sources.filter { !it.startsWith(":") }.sorted()
-            local + external
-        }
-
-        return buildString {
-            for ((sourceIdx, source) in sortedSources.withIndex()) {
-                appendLine("[$source]")
-                val tagMap = sourceTagEntries[source] ?: continue
-
-                val allTags = (categories.map { it.first } + applicationLevel).distinct().filter { it in tagMap }
-
-                for ((i, tag) in allTags.withIndex()) {
-                    appendLine("$tag:")
-                    tagMap[tag]?.sorted()?.forEach { appendLine("  $it") }
-                    if (i < allTags.size - 1) appendLine()
-                }
-
-                if (sourceIdx < sortedSources.size - 1) {
-                    appendLine()
                 }
             }
         }
@@ -250,6 +199,4 @@ internal object SourcesContentBuilder {
             }
         }
     }
-
-    private const val STARTUP_PROVIDER_NAME = "androidx.startup.InitializationProvider"
 }

@@ -273,13 +273,12 @@ internal object ManifestVisitor {
         return getElementsByTagName("provider")
             .toElementList()
             .filter { node ->
-                node.getAttributeNS(ANDROID_NS, "name") == "androidx.startup.InitializationProvider"
+                node.getAttributeNS(ANDROID_NS, "name") == STARTUP_PROVIDER_NAME
             }
             .flatMap { provider ->
-                provider.getElementsByTagName("meta-data")
-                    .toElementList()
+                provider.directChildElements("meta-data")
                     .filter { meta ->
-                        meta.getAttributeNS(ANDROID_NS, "value") == "androidx.startup"
+                        meta.getAttributeNS(ANDROID_NS, "value") == STARTUP_METADATA_VALUE
                     }
                     .mapNotNull { meta -> meta.attrNS("name") }
             }
