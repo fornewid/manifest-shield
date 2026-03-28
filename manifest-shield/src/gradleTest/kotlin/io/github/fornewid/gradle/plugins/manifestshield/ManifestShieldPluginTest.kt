@@ -69,6 +69,27 @@ internal class ManifestShieldPluginTest {
             </manifest>
         """.trimIndent()
 
+        private val MANIFEST_WITH_PROVIDER_AND_STARTUP = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                    <provider
+                        android:name=".MyProvider"
+                        android:authorities="io.github.fornewid.test.provider"
+                        android:exported="true" />
+                    <provider
+                        android:name="androidx.startup.InitializationProvider"
+                        android:authorities="io.github.fornewid.test.androidx-startup"
+                        android:exported="false">
+                        <meta-data
+                            android:name="com.example.MyInitializer"
+                            android:value="androidx.startup" />
+                    </provider>
+                </application>
+            </manifest>
+        """.trimIndent()
+
         private val MANIFEST_WITH_PERMISSION = """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -649,6 +670,7 @@ internal class ManifestShieldPluginTest {
             assertThat(baseline).isNotNull()
             assertThat(baseline).contains("androidx.startup:")
             assertThat(baseline).contains("MyInitializer")
+            assertThat(baseline).doesNotContain("provider:")
         }
     }
 
@@ -670,6 +692,23 @@ internal class ManifestShieldPluginTest {
             val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
             assertThat(baseline).isNotNull()
             assertThat(baseline).doesNotContain("androidx.startup:")
+        }
+    }
+
+    @Test
+    fun `baseline shows provider and startup sections when both exist`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_PROVIDER_AND_STARTUP)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("provider:")
+            assertThat(baseline).contains("MyProvider")
+            assertThat(baseline).doesNotContain("InitializationProvider")
+            assertThat(baseline).contains("androidx.startup:")
+            assertThat(baseline).contains("MyInitializer")
         }
     }
 

@@ -200,22 +200,32 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         }
 
         if (guardActivity.get() && manifest.activity.isNotEmpty()) {
-            sections.add(Section("activity", componentLines(manifest.activity)))
+            val lines = componentLines(manifest.activity)
+            if (lines.isNotEmpty()) sections.add(Section("activity", lines))
         }
         if (guardActivityAlias.get() && manifest.activityAlias.isNotEmpty()) {
-            sections.add(Section("activity-alias", componentLines(manifest.activityAlias)))
+            val lines = componentLines(manifest.activityAlias)
+            if (lines.isNotEmpty()) sections.add(Section("activity-alias", lines))
         }
         if (guardService.get() && manifest.service.isNotEmpty()) {
-            sections.add(Section("service", componentLines(manifest.service)))
+            val lines = componentLines(manifest.service)
+            if (lines.isNotEmpty()) sections.add(Section("service", lines))
         }
         if (guardReceiver.get() && manifest.receiver.isNotEmpty()) {
-            sections.add(Section("receiver", componentLines(manifest.receiver)))
+            val lines = componentLines(manifest.receiver)
+            if (lines.isNotEmpty()) sections.add(Section("receiver", lines))
         }
         if (guardMetaData.get() && manifest.metaData.isNotEmpty()) {
             sections.add(Section("meta-data", manifest.metaData.map { it.toBaselineString() }.sorted()))
         }
         if (guardProvider.get() && manifest.provider.isNotEmpty()) {
-            sections.add(Section("provider", componentLines(manifest.provider)))
+            val providers = if (guardStartup.get()) {
+                manifest.provider.filter { it.name != STARTUP_PROVIDER_NAME }
+            } else {
+                manifest.provider
+            }
+            val lines = componentLines(providers)
+            if (lines.isNotEmpty()) sections.add(Section("provider", lines))
         }
         if (guardUsesLibrary.get() && manifest.usesLibraries.isNotEmpty()) {
             addRequiredSection("uses-library", manifest.usesLibraries) { it.required }
@@ -257,5 +267,9 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
         this.filePrefix.set(filePrefix)
 
         declareCompatibilities()
+    }
+
+    private companion object {
+        const val STARTUP_PROVIDER_NAME = "androidx.startup.InitializationProvider"
     }
 }
