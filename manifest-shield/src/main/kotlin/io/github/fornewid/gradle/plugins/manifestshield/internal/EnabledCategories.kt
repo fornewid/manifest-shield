@@ -24,6 +24,7 @@ internal data class EnabledCategories(
     val startup: Boolean,
     val exportedOnly: Boolean,
     val requiredOnly: Boolean,
+    val unprotectedOnly: Boolean,
 ) {
     companion object {
         fun from(flags: ShieldFlags): EnabledCategories = EnabledCategories(
@@ -50,6 +51,7 @@ internal data class EnabledCategories(
             startup = flags.guardStartup.get(),
             exportedOnly = flags.exportedOnly.get(),
             requiredOnly = flags.requiredOnly.get(),
+            unprotectedOnly = flags.unprotectedOnly.get(),
         )
     }
 }

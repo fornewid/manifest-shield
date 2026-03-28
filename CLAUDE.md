@@ -63,6 +63,7 @@ This is a Gradle plugin (`io.github.fornewid.manifest-shield`) that detects unin
 ### Default Values
 
 - **`true` by default** (security/capability): `usesPermission`, `usesFeature`, `activity`, `activityAlias`, `service`, `receiver`, `provider`
+- **`true` by default** (filtering): `exportedOnly`, `requiredOnly`, `unprotectedOnly`
 - **`false` by default** (verbose/niche): `usesSdk`, `permission`, `intentFilter`, `usesPermissionSdk23`, `supportsScreens`, `compatibleScreens`, `usesConfiguration`, `supportsGlTexture`, `queries`, `metaData`, `usesLibrary`, `usesNativeLibrary`, `profileable`, `startup`
 
 ### Test Structure

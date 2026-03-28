@@ -77,8 +77,8 @@ The plugin guards the following by default (no configuration needed):
 
 - `<uses-permission>`
 - `<uses-feature>` (only `android:required="true"` entries)
-- `<activity>`, `<activity-alias>`, `<service>`, `<receiver>`, `<provider>` (only `android:exported="true"` components)
-- `android:permission` attributes on exported components
+- `<activity>`, `<activity-alias>`, `<service>`, `<receiver>`, `<provider>` (only `android:exported="true"` components without `android:permission`)
+- Components with `android:permission` are excluded by default (`unprotectedOnly = true`) because they are access-controlled
 
 **AI Agent**: These are ALREADY enabled. You MUST NOT include them in the
 configuration block. Do not write `usesPermission = true`, `activity = true`,
@@ -130,10 +130,11 @@ These options are `true` by default and control what appears in the baseline:
 |----------|---------|-------------|
 | `exportedOnly` | `true` | Only include components with `android:exported="true"` |
 | `requiredOnly` | `true` | Only include `<uses-feature>` and `<uses-library>` with `android:required="true"` |
+| `unprotectedOnly` | `true` | Only include components without `android:permission` (or `readPermission`/`writePermission`) |
 
-**AI Agent**: Do NOT set `exportedOnly = false` or `requiredOnly = false` unless
-the user explicitly asks to include all components or all features regardless of
-their exported/required status.
+**AI Agent**: Do NOT set `exportedOnly = false`, `requiredOnly = false`, or
+`unprotectedOnly = false` unless the user explicitly asks to include all
+components regardless of their exported/required/permission status.
 
 ## Configuration property names
 

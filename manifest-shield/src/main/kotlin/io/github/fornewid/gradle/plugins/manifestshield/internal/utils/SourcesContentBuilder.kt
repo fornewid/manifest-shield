@@ -150,7 +150,9 @@ internal object SourcesContentBuilder {
         if (flags.permission && manifest.permission.isNotEmpty()) addEntries("permission", "permission", manifest.permission)
         if (flags.supportsGlTexture && manifest.supportsGlTextures.isNotEmpty()) addEntries("supports-gl-texture", "supports-gl-texture", manifest.supportsGlTextures)
         fun filterComponents(components: List<ManifestComponent>): List<ManifestComponent> =
-            if (flags.exportedOnly) components.filter { it.exported == true } else components
+            components
+                .filter { !flags.exportedOnly || it.exported == true }
+                .filter { !flags.unprotectedOnly || !it.hasPermissionProtection() }
 
         if (flags.activity) filterComponents(manifest.activity).let { if (it.isNotEmpty()) addEntries("activity", "activity", it, isComponent = true) }
         if (flags.activityAlias) filterComponents(manifest.activityAlias).let { if (it.isNotEmpty()) addEntries("activity-alias", "activity-alias", it, isComponent = true) }

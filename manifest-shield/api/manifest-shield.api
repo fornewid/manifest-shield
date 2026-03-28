@@ -19,6 +19,7 @@ public class io/github/fornewid/gradle/plugins/manifestshield/ManifestShieldConf
 	public final fun getStartup ()Z
 	public final fun getSupportsGlTexture ()Z
 	public final fun getSupportsScreens ()Z
+	public final fun getUnprotectedOnly ()Z
 	public final fun getUsesConfiguration ()Z
 	public final fun getUsesFeature ()Z
 	public final fun getUsesLibrary ()Z
@@ -43,6 +44,7 @@ public class io/github/fornewid/gradle/plugins/manifestshield/ManifestShieldConf
 	public final fun setStartup (Z)V
 	public final fun setSupportsGlTexture (Z)V
 	public final fun setSupportsScreens (Z)V
+	public final fun setUnprotectedOnly (Z)V
 	public final fun setUsesConfiguration (Z)V
 	public final fun setUsesFeature (Z)V
 	public final fun setUsesLibrary (Z)V

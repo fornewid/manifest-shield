@@ -963,7 +963,15 @@ internal class ManifestShieldPluginTest {
 
     @Test
     fun `baseline shows permission on exported components`() {
-        AndroidProject().use { project ->
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    unprotectedOnly = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
             project.updateManifest(MANIFEST_WITH_PERMISSION_COMPONENT)
 
             build(project, ":app:manifestShieldBaselineRelease")
@@ -975,6 +983,48 @@ internal class ManifestShieldPluginTest {
             assertThat(baseline).contains("  permission: android.permission.BIND_JOB_SERVICE")
             // InternalService is exported=false, so its permission should not appear
             assertThat(baseline).doesNotContain("com.example.INTERNAL")
+        }
+    }
+
+    @Test
+    fun `baseline excludes permission-protected components by default`() {
+        AndroidProject().use { project ->
+            project.updateManifest(MANIFEST_WITH_PERMISSION_COMPONENT)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("activity:")
+            assertThat(baseline).contains("MainActivity (exported)")
+            assertThat(baseline).doesNotContain("BoundService")
+            assertThat(baseline).doesNotContain("BIND_JOB_SERVICE")
+        }
+    }
+
+    @Test
+    fun `baseline includes permission-protected components when unprotectedOnly disabled`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    unprotectedOnly = false
+                }
+            }
+        """.trimIndent()
+
+        AndroidProject(pluginConfig = pluginConfig).use { project ->
+            project.updateManifest(MANIFEST_WITH_PERMISSION_COMPONENT)
+
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val baseline = project.readBaselineFile("manifestShield/releaseAndroidManifest.txt")
+            assertThat(baseline).isNotNull()
+            assertThat(baseline).contains("activity:")
+            assertThat(baseline).contains("MainActivity (exported)")
+            assertThat(baseline).contains("service:")
+            assertThat(baseline).contains("BoundService (exported)")
+            assertThat(baseline).contains("  permission: android.permission.BIND_JOB_SERVICE")
+            assertThat(baseline).doesNotContain("InternalService")
         }
     }
 

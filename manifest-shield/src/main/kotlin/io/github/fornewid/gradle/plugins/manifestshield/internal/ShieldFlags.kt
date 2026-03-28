@@ -32,6 +32,7 @@ internal interface ShieldFlags {
     @get:Input val guardProfileable: Property<Boolean>
     @get:Input val exportedOnly: Property<Boolean>
     @get:Input val requiredOnly: Property<Boolean>
+    @get:Input val unprotectedOnly: Property<Boolean>
 }
 
 internal fun ShieldFlags.applyConfig(config: ManifestShieldConfiguration) {
@@ -58,4 +59,5 @@ internal fun ShieldFlags.applyConfig(config: ManifestShieldConfiguration) {
     guardProfileable.set(config.profileable)
     exportedOnly.set(config.exportedOnly)
     requiredOnly.set(config.requiredOnly)
+    unprotectedOnly.set(config.unprotectedOnly)
 }

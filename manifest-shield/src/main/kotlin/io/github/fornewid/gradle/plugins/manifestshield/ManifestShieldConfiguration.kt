@@ -110,6 +110,10 @@ public open class ManifestShieldConfiguration @Inject constructor(
     @get:Input
     public var requiredOnly: Boolean = true
 
+    /** Only include components without android:permission in the baseline */
+    @get:Input
+    public var unprotectedOnly: Boolean = true
+
     /** Enable source-attributed format grouped by library/module origin */
     @get:Input
     public var sources: Boolean = false

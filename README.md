@@ -161,8 +161,11 @@ manifestShield {
 | `profileable` | `false` | Shield `<profileable>` |
 | `exportedOnly` | **`true`** | Only include exported components in baseline |
 | `requiredOnly` | **`true`** | Only include required `<uses-feature>` and `<uses-library>` entries |
+| `unprotectedOnly` | **`true`** | Only include components without `android:permission` in baseline |
 
 **Note on `exportedOnly`**: Starting with Android 12, components with `<intent-filter>` must explicitly declare `android:exported`. When `exportedOnly = true` (default), only components with `android:exported="true"` are included — components without the attribute are excluded. This aligns with Android 12+ requirements where all intent-filter components must be explicit.
+
+**Note on `unprotectedOnly`**: When `unprotectedOnly = true` (default), exported components with `android:permission`, `android:readPermission`, or `android:writePermission` are excluded from the baseline. These components require callers to hold a specific permission, reducing their security attack surface. This matches [Android Lint's behavior](https://googlesamples.github.io/android-custom-lint-rules/checks/ExportedReceiver.md.html), which does not flag exported components that declare a permission. Set `unprotectedOnly = false` to include all exported components regardless of permission protection.
 
 **Note on `intentFilter`**: Intent-filters are never merged between manifests — each source's intent-filter is added independently. When `intentFilter = true`, changes from any dependency update that modifies intent-filters will appear in the baseline diff.
 

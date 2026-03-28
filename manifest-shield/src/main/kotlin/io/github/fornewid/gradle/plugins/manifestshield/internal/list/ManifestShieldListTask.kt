@@ -70,6 +70,7 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
     abstract override val guardProfileable: Property<Boolean>
     abstract override val exportedOnly: Property<Boolean>
     abstract override val requiredOnly: Property<Boolean>
+    abstract override val unprotectedOnly: Property<Boolean>
 
     @get:OutputDirectory
     abstract val baselineDir: DirectoryProperty
@@ -179,8 +180,11 @@ internal abstract class ManifestShieldListTask : DefaultTask(), ShieldFlags {
 
         // Application-level categories
         val filterExported = exportedOnly.get()
+        val filterUnprotected = unprotectedOnly.get()
         fun componentLines(components: List<ManifestComponent>): List<String> {
-            val filtered = if (filterExported) components.filter { it.exported == true } else components
+            val filtered = components
+                .filter { !filterExported || it.exported == true }
+                .filter { !filterUnprotected || !it.hasPermissionProtection() }
             val lines = mutableListOf<String>()
             for (comp in filtered.sortedBy { it.name }) {
                 lines.add(comp.toBaselineString())
