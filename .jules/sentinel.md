@@ -1,0 +1,4 @@
+## $(date +%Y-%m-%d) - Fix XML External Entity (XXE) vulnerability
+**Vulnerability:** XML External Entity (XXE) vulnerability in `DocumentBuilderFactory` used to parse `AndroidManifest.xml` files.
+**Learning:** By default, Java's `DocumentBuilderFactory` allows external entities and DOCTYPE declarations, which can be exploited to read local files (XXE) or perform SSRF if an attacker can control the XML content being parsed. While `AndroidManifest.xml` files usually come from trusted sources, a malicious or compromised dependency could provide a crafted manifest that exploits this when the plugin merges manifests.
+**Prevention:** Always explicitly configure `DocumentBuilderFactory` to disable DOCTYPE declarations (`http://apache.org/xml/features/disallow-doctype-decl`), external general/parameter entities, and external DTDs. Also, set `isXIncludeAware` and `isExpandEntityReferences` to `false`.

@@ -48,6 +48,12 @@ internal object ManifestVisitor {
     fun parse(manifestFile: File): ManifestExtraction {
         val factory = DocumentBuilderFactory.newInstance().apply {
             isNamespaceAware = true
+            setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+            setFeature("http://xml.org/sax/features/external-general-entities", false)
+            setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+            setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+            isXIncludeAware = false
+            isExpandEntityReferences = false
         }
         val doc = factory.newDocumentBuilder().parse(manifestFile)
         val root = doc.documentElement
