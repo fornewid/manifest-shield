@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   create-release-pr:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     environment: release
     steps:
       - uses: actions/checkout@v6
