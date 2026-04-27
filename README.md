@@ -177,8 +177,9 @@ The following manifest elements are **not tracked** by this plugin:
 
 ## Requirements
 
-- Android Gradle Plugin 8.0.0+
-- Gradle 8.0+
+- Android Gradle Plugin 8.0.0+ (verified through AGP 9.1.x)
+- Gradle 8.0+ — must satisfy your AGP version's own minimum (e.g., AGP 9.1.x requires Gradle 9.3.1+)
+- JDK 17+ — required by AGP 8.0+ regardless of plugin version
 
 ## AI Agent Guide
 

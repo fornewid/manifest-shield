@@ -7,6 +7,8 @@ internal class AndroidProject(
     private val manifestContent: String = DEFAULT_MANIFEST,
     private val pluginConfig: String = DEFAULT_PLUGIN_CONFIG,
     private val androidExtra: String = "",
+    val agpVersion: String = DEFAULT_AGP_VERSION,
+    val gradleVersion: String? = null,
 ) : AutoCloseable {
 
     val dir: File = File("build/gradleTest/${UUID.randomUUID()}").apply { mkdirs() }
@@ -33,7 +35,7 @@ internal class AndroidProject(
                     mavenCentral()
                 }
                 dependencies {
-                    classpath 'com.android.tools.build:gradle:8.5.0'
+                    classpath 'com.android.tools.build:gradle:$agpVersion'
                     classpath files('$escapedJar')
                 }
             }
@@ -117,6 +119,8 @@ internal class AndroidProject(
     }
 
     companion object {
+        const val DEFAULT_AGP_VERSION = "8.5.0"
+
         val DEFAULT_MANIFEST = """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
