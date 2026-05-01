@@ -5,8 +5,12 @@ import io.github.fornewid.gradle.plugins.manifestshield.internal.ManifestExtract
 import io.github.fornewid.gradle.plugins.manifestshield.internal.STARTUP_PROVIDER_NAME
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestEntry
+import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestQuery
 
 internal object SourcesContentBuilder {
+
+    /** Group label for elements whose source the parser could not resolve. */
+    const val UNRESOLVED_SOURCE: String = "<unresolved>"
 
     fun build(
         entries: List<ManifestEntry>,
@@ -120,32 +124,39 @@ internal object SourcesContentBuilder {
         if (flags.usesLibrary && libList.isNotEmpty()) addEntries("uses-library", "uses-library", libList)
         if (flags.usesNativeLibrary && manifest.usesNativeLibraries.isNotEmpty()) addEntries("uses-native-library", "uses-native-library", manifest.usesNativeLibraries)
 
-        // Non-ManifestEntry elements (attributed to the current project module)
-        fun addProjectLines(tag: String, lines: List<String>) {
-            if (lines.isNotEmpty()) {
+        // Singleton elements have no android:name, so the blame log keys them by type alone.
+        // We resolve their source via sourceMap[elementType] instead of attributing them all
+        // to the current project. If parsing ever misses a source, the entry surfaces under
+        // the [<unresolved>] group rather than being silently misattributed to :app.
+        fun addSingletonEntries(tag: String, elementType: String, lines: List<String>) {
+            if (lines.isEmpty()) return
+            val sources = sourceMap[elementType] ?: listOf(UNRESOLVED_SOURCE)
+            for (source in sources) {
                 sourceTagEntries
-                    .getOrPut(projectPath) { mutableMapOf() }
+                    .getOrPut(source) { mutableMapOf() }
                     .getOrPut(tag) { mutableListOf() }
                     .addAll(lines)
             }
         }
         if (flags.supportsScreens && manifest.supportsScreens != null) {
-            addProjectLines("supports-screens", manifest.supportsScreens.toBaselineLines())
+            addSingletonEntries("supports-screens", "supports-screens", manifest.supportsScreens.toBaselineLines())
         }
         if (flags.compatibleScreens && manifest.compatibleScreens.isNotEmpty()) {
-            addProjectLines("compatible-screens", manifest.compatibleScreens)
+            addSingletonEntries("compatible-screens", "compatible-screens", manifest.compatibleScreens)
         }
         if (flags.usesConfiguration && manifest.usesConfiguration != null) {
-            addProjectLines("uses-configuration", manifest.usesConfiguration.toBaselineLines())
+            addSingletonEntries("uses-configuration", "uses-configuration", manifest.usesConfiguration.toBaselineLines())
         }
         if (flags.queries && manifest.queries != null) {
-            addProjectLines("queries", manifest.queries.toBaselineLines())
+            addQueriesEntries(manifest.queries, sourceMap, sourceTagEntries)
         }
         if (flags.profileable && manifest.profileable != null) {
-            addProjectLines("profileable", manifest.profileable.toBaselineLines())
+            addSingletonEntries("profileable", "profileable", manifest.profileable.toBaselineLines())
         }
 
-        // Startup initializers (attributed to the current project module)
+        // Startup initializers are <meta-data> children of androidx.startup's InitializationProvider,
+        // declared by libraries that hook into App Startup. They are not directly traceable through
+        // the merged blame log entries, so they remain attributed to the current project module.
         if (flags.startup && manifest.startupInitializers.isNotEmpty()) {
             sourceTagEntries
                 .getOrPut(projectPath) { mutableMapOf() }
@@ -153,49 +164,88 @@ internal object SourcesContentBuilder {
                 .addAll(manifest.startupInitializers)
         }
 
-        // uses-sdk is always from the current project module
-        val sdk = manifest.usesSdk
-        if (flags.usesSdk && sdk != null) {
-            sourceTagEntries.getOrPut(projectPath) { mutableMapOf() }
+        // uses-sdk: AGP injects this from build.gradle's minSdk/targetSdk, which the blame log
+        // records as `INJECTED from <app>/AndroidManifest.xml`, so it resolves to the project
+        // path naturally via sourceMap.
+        if (flags.usesSdk && manifest.usesSdk != null) {
+            addSingletonEntries("uses-sdk", "uses-sdk", manifest.usesSdk.toBaselineLines())
         }
 
-        val sortedSources = sourceTagEntries.keys.sorted().let { sources ->
+        // Group order: local modules (`:`-prefixed), then external libraries, then <unresolved>
+        // last so reviewers see it as an exception rather than a normal source.
+        val sortedSources = sourceTagEntries.keys.let { sources ->
             val local = sources.filter { it.startsWith(":") }.sorted()
-            val external = sources.filter { !it.startsWith(":") }.sorted()
-            local + external
+            val unresolved = sources.filter { it == UNRESOLVED_SOURCE }
+            val external = (sources - local.toSet() - unresolved.toSet()).sorted()
+            local + external + unresolved
         }
+
+        val manifestLevelOrder = listOf(
+            "uses-sdk", "uses-feature", "uses-permission", "uses-permission-sdk-23", "permission",
+            "supports-screens", "compatible-screens", "uses-configuration", "supports-gl-texture", "queries"
+        )
 
         return buildString {
             for ((sourceIdx, source) in sortedSources.withIndex()) {
                 appendLine("[$source]")
                 val tagMap = sourceTagEntries[source] ?: continue
 
-                // uses-sdk is per-source "app" only (it comes from the build config)
-                val hasSdk = flags.usesSdk && source == projectPath && manifest.usesSdk != null
-
-                val manifestTags = mutableListOf<String>()
-                if (hasSdk) manifestTags.add("uses-sdk")
-                manifestTags.addAll(listOf("uses-feature", "uses-permission", "uses-permission-sdk-23", "permission",
-                    "supports-screens", "compatible-screens", "uses-configuration", "supports-gl-texture", "queries").filter { it in tagMap })
-
-                val appTags = applicationLevel.filter { it in tagMap }
-                val allTags = manifestTags + appTags
+                val allTags = manifestLevelOrder.filter { it in tagMap } +
+                    applicationLevel.filter { it in tagMap }
 
                 for ((i, tag) in allTags.withIndex()) {
-                    if (tag == "uses-sdk") {
-                        appendLine("uses-sdk:")
-                        manifest.usesSdk?.minSdkVersion?.let { appendLine("  minSdkVersion=$it") }
-                        manifest.usesSdk?.targetSdkVersion?.let { appendLine("  targetSdkVersion=$it") }
-                    } else {
-                        appendLine("$tag:")
-                        tagMap[tag]?.forEach { appendLine("  $it") }
-                    }
+                    appendLine("$tag:")
+                    tagMap[tag]?.forEach { appendLine("  $it") }
                     if (i < allTags.size - 1) appendLine()
                 }
 
                 if (sourceIdx < sortedSources.size - 1) {
                     appendLine()
                 }
+            }
+        }
+    }
+
+    /**
+     * Attribute the contents of a `<queries>` block. Unlike other singleton elements,
+     * `<queries>` is a container whose children (`<package>`, `<provider>`, `<intent>`)
+     * each carry independent sources in the manifest-merger blame log.
+     *
+     * - `<package>`: keyed by `package#$name` in the blame log → resolved per package.
+     * - `<provider>` and `<intent>`: child-level keys in the blame log are inconsistent
+     *   (providers may use authorities, intents are composite), so they are attributed
+     *   to the first source of the enclosing `<queries>` container as a best-effort.
+     *   Per-child resolution for these two is tracked as a follow-up.
+     */
+    private fun addQueriesEntries(
+        queries: ManifestQuery,
+        sourceMap: Map<String, List<String>>,
+        sourceTagEntries: MutableMap<String, MutableMap<String, MutableList<String>>>,
+    ) {
+        fun addLine(source: String, line: String) {
+            sourceTagEntries
+                .getOrPut(source) { mutableMapOf() }
+                .getOrPut("queries") { mutableListOf() }
+                .add(line)
+        }
+
+        queries.packages.sorted().forEach { name ->
+            val sources = sourceMap["package#$name"] ?: listOf(UNRESOLVED_SOURCE)
+            for (source in sources) {
+                addLine(source, "package: $name")
+            }
+        }
+
+        if (queries.providers.isNotEmpty() || queries.intents.isNotEmpty()) {
+            val containerSource = sourceMap["queries"]?.firstOrNull() ?: UNRESOLVED_SOURCE
+            queries.providers.sorted().forEach { auth ->
+                addLine(containerSource, "provider: $auth")
+            }
+            queries.intents.forEach { intent ->
+                addLine(containerSource, "intent:")
+                intent.actions.forEach { addLine(containerSource, "  action: $it") }
+                intent.categories.forEach { addLine(containerSource, "  category: $it") }
+                intent.dataSpecs.forEach { addLine(containerSource, "  data: $it") }
             }
         }
     }

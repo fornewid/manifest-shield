@@ -1,0 +1,28 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:2:1-30:12
+INJECTED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:2:1-30:12
+	package
+		INJECTED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml
+uses-sdk
+INJECTED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+queries
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:7:5-9:15
+MERGED from [com.google.android.gms:play-services-base:18.5.0] /Users/dev/.gradle/caches/8.10.2/transforms/abc/transformed/play-services-base-18.5.0/AndroidManifest.xml:5:5-9:15
+package#com.example.helper
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:8:9-54
+package#com.google.android.gms
+ADDED from [com.google.android.gms:play-services-base:18.5.0] /Users/dev/.gradle/caches/8.10.2/transforms/abc/transformed/play-services-base-18.5.0/AndroidManifest.xml:6:9-65
+supports-screens
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:11:5-15:40
+compatible-screens
+MERGED from [com.example:legacy-screens:1.0.0] /Users/dev/.gradle/caches/8.10.2/transforms/def/transformed/legacy-screens-1.0.0/AndroidManifest.xml:8:5-12:40
+uses-configuration
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:17:5-19:44
+application
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:21:5-29:19
+INJECTED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:21:5-29:19
+profileable
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:36:9-45
+activity#com.example.app.MainActivity
+ADDED from /Users/dev/MyApp/app/src/main/AndroidManifest.xml:25:9-32:20

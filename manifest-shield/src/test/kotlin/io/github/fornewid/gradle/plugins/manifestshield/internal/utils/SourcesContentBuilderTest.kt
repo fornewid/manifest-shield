@@ -1,9 +1,14 @@
 package io.github.fornewid.gradle.plugins.manifestshield.internal.utils
 
 import com.google.common.truth.Truth.assertThat
+import io.github.fornewid.gradle.plugins.manifestshield.internal.EnabledCategories
+import io.github.fornewid.gradle.plugins.manifestshield.internal.ManifestExtraction
 import io.github.fornewid.gradle.plugins.manifestshield.models.ComponentType
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestComponent
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestPermission
+import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestProfileable
+import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestQuery
+import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestSdk
 import org.junit.jupiter.api.Test
 
 internal class SourcesContentBuilderTest {
@@ -95,4 +100,205 @@ internal class SourcesContentBuilderTest {
         )
         assertThat(result).isEmpty()
     }
+
+    @Test
+    fun `buildMergedWithSdk attributes singleton elements via sourceMap`() {
+        val manifest = emptyManifest().copy(
+            usesSdk = ManifestSdk(minSdkVersion = "23", targetSdkVersion = "36"),
+            profileable = ManifestProfileable(shell = true, enabled = null),
+        )
+        val sourceMap = mapOf(
+            "uses-sdk" to listOf(":app"),
+            "profileable" to listOf("com.example:profiler:1.0.0"),
+        )
+
+        val result = SourcesContentBuilder.buildMergedWithSdk(
+            manifest = manifest,
+            sourceMap = sourceMap,
+            projectPath = ":app",
+            flags = enableSingletons(),
+        )
+
+        assertThat(result).contains("[:app]")
+        assertThat(result).contains("uses-sdk:")
+        assertThat(result).contains("  minSdkVersion=23")
+        assertThat(result).contains("  targetSdkVersion=36")
+        assertThat(result).contains("[com.example:profiler:1.0.0]")
+        // profileable is attributed to the library, NOT to :app
+        val appSection = result.substringAfter("[:app]").substringBefore("[com.")
+        assertThat(appSection).doesNotContain("profileable:")
+    }
+
+    @Test
+    fun `buildMergedWithSdk attributes queries packages per child`() {
+        // App declares <queries><package="com.example.helper"/></queries>.
+        // Library injects <queries><package="com.google.android.gms"/></queries>.
+        // Merged manifest has both packages, but each has its own blame entry.
+        val manifest = emptyManifest().copy(
+            queries = ManifestQuery(
+                packages = listOf("com.example.helper", "com.google.android.gms"),
+                intents = emptyList(),
+                providers = emptyList(),
+            ),
+        )
+        val sourceMap = mapOf(
+            "queries" to listOf(":app", "com.google.android.gms:play-services-base:18.5.0"),
+            "package#com.example.helper" to listOf(":app"),
+            "package#com.google.android.gms" to listOf("com.google.android.gms:play-services-base:18.5.0"),
+        )
+
+        val result = SourcesContentBuilder.buildMergedWithSdk(
+            manifest = manifest,
+            sourceMap = sourceMap,
+            projectPath = ":app",
+            flags = enableSingletons(),
+        )
+
+        val appSection = result.substringAfter("[:app]").substringBefore("[com.")
+        val librarySection = result.substringAfter("[com.google.android.gms:play-services-base:18.5.0]")
+
+        // helper appears under :app only
+        assertThat(appSection).contains("package: com.example.helper")
+        assertThat(librarySection).doesNotContain("package: com.example.helper")
+        // gms appears under the library only
+        assertThat(librarySection).contains("package: com.google.android.gms")
+        assertThat(appSection).doesNotContain("package: com.google.android.gms")
+    }
+
+    @Test
+    fun `buildMergedWithSdk falls back to unresolved when query package source is missing`() {
+        val manifest = emptyManifest().copy(
+            queries = ManifestQuery(
+                packages = listOf("com.unknown"),
+                intents = emptyList(),
+                providers = emptyList(),
+            ),
+        )
+
+        val result = SourcesContentBuilder.buildMergedWithSdk(
+            manifest = manifest,
+            sourceMap = emptyMap(),
+            projectPath = ":app",
+            flags = enableSingletons(),
+        )
+
+        assertThat(result).contains("[<unresolved>]")
+        val unresolvedSection = result.substringAfter("[<unresolved>]")
+        assertThat(unresolvedSection).contains("queries:")
+        assertThat(unresolvedSection).contains("package: com.unknown")
+    }
+
+    @Test
+    fun `buildMergedWithSdk places unresolved group last when other sources exist`() {
+        val manifest = emptyManifest().copy(
+            usesSdk = ManifestSdk(minSdkVersion = "23", targetSdkVersion = null),
+            queries = ManifestQuery(
+                packages = listOf("com.resolved", "com.missing"),
+                intents = emptyList(),
+                providers = emptyList(),
+            ),
+        )
+        val sourceMap = mapOf(
+            "uses-sdk" to listOf(":app"),
+            "package#com.resolved" to listOf("com.example:lib:1.0.0"),
+            // package#com.missing is intentionally missing → routed to <unresolved>
+        )
+
+        val result = SourcesContentBuilder.buildMergedWithSdk(
+            manifest = manifest,
+            sourceMap = sourceMap,
+            projectPath = ":app",
+            flags = enableSingletons(),
+        )
+
+        // Local module (`:app`) appears first, external library next, <unresolved> last
+        val appIdx = result.indexOf("[:app]")
+        val libIdx = result.indexOf("[com.example:lib:1.0.0]")
+        val unresolvedIdx = result.indexOf("[<unresolved>]")
+        assertThat(appIdx).isAtLeast(0)
+        assertThat(libIdx).isGreaterThan(appIdx)
+        assertThat(unresolvedIdx).isGreaterThan(libIdx)
+    }
+
+    @Test
+    fun `buildMergedWithSdk uses unresolved group when sourceMap misses singleton`() {
+        val manifest = emptyManifest().copy(
+            queries = ManifestQuery(
+                packages = listOf("com.unknown"),
+                intents = emptyList(),
+                providers = emptyList(),
+            ),
+        )
+        // sourceMap is empty — simulating a parser miss for the queries element
+
+        val result = SourcesContentBuilder.buildMergedWithSdk(
+            manifest = manifest,
+            sourceMap = emptyMap(),
+            projectPath = ":app",
+            flags = enableSingletons(),
+        )
+
+        assertThat(result).contains("[<unresolved>]")
+        // <unresolved> sorts last
+        assertThat(result.indexOf("[<unresolved>]")).isAtLeast(0)
+    }
+
+    @Test
+    fun `buildMergedWithSdk does not silently route singletons to projectPath`() {
+        val manifest = emptyManifest().copy(
+            queries = ManifestQuery(
+                packages = listOf("com.from.library"),
+                intents = emptyList(),
+                providers = emptyList(),
+            ),
+        )
+        val sourceMap = mapOf(
+            "queries" to listOf("com.example:lib:1.0.0"),
+            "package#com.from.library" to listOf("com.example:lib:1.0.0"),
+        )
+
+        val result = SourcesContentBuilder.buildMergedWithSdk(
+            manifest = manifest,
+            sourceMap = sourceMap,
+            projectPath = ":app",
+            flags = enableSingletons(),
+        )
+
+        // queries should appear ONLY under the library group, not under [:app]
+        assertThat(result).doesNotContain("[:app]")
+        assertThat(result).contains("[com.example:lib:1.0.0]")
+        assertThat(result).contains("queries:")
+    }
+
+    private fun emptyManifest() = ManifestExtraction(
+        usesSdk = null,
+        usesPermission = emptyList(),
+        usesPermissionSdk23 = emptyList(),
+        permission = emptyList(),
+        usesFeature = emptyList(),
+        supportsScreens = null,
+        compatibleScreens = emptyList(),
+        usesConfiguration = null,
+        supportsGlTextures = emptyList(),
+        queries = null,
+        activity = emptyList(),
+        activityAlias = emptyList(),
+        metaData = emptyList(),
+        service = emptyList(),
+        receiver = emptyList(),
+        provider = emptyList(),
+        usesLibraries = emptyList(),
+        usesNativeLibraries = emptyList(),
+        profileable = null,
+        startupInitializers = emptyList(),
+    )
+
+    private fun enableSingletons() = EnabledCategories(
+        usesSdk = true, usesFeature = false, usesPermission = false, usesPermissionSdk23 = false,
+        permission = false, supportsScreens = true, compatibleScreens = true, usesConfiguration = true,
+        supportsGlTexture = false, queries = true, activity = false, activityAlias = false,
+        metaData = false, service = false, receiver = false, provider = false,
+        usesLibrary = false, usesNativeLibrary = false, profileable = true, intentFilter = false,
+        startup = false, exportedOnly = true, requiredOnly = true, unprotectedOnly = true,
+    )
 }

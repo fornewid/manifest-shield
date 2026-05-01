@@ -1147,6 +1147,47 @@ internal class ManifestShieldPluginTest {
 
 
     @Test
+    fun `sources baseline attributes app-declared queries to project module`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    queries = true
+                    sources = true
+                }
+            }
+        """.trimIndent()
+
+        val manifestWithQueries = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <queries>
+                    <package android:name="com.example.helper" />
+                </queries>
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        AndroidProject(
+            manifestContent = manifestWithQueries,
+            pluginConfig = pluginConfig,
+        ).use { project ->
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val sources = project.readBaselineFile("manifestShield/releaseAndroidManifest.sources.txt")
+            assertThat(sources).isNotNull()
+            // The :app group must contain the queries the app itself declared.
+            val appSection = sources!!.substringAfter("[:app]").substringBefore("\n[")
+            assertThat(appSection).contains("queries:")
+            assertThat(appSection).contains("package: com.example.helper")
+            // The placeholder "<unresolved>" group must NOT appear when blame log
+            // resolves the source successfully.
+            assertThat(sources).doesNotContain("[<unresolved>]")
+        }
+    }
+
+    @Test
     fun `baseline task works with configuration cache`() {
         AndroidProject().use { project ->
             val result = build(

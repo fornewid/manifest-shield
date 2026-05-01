@@ -123,9 +123,12 @@ internal class BlameLogParserTest {
         }
         assertThat(firebaseService.source).isEqualTo("com.google.firebase:firebase-common:20.0.0")
 
-        // Elements without a name (like uses-sdk) are skipped by the parser
+        // Singleton elements (no android:name) are still attributed by element type alone.
+        // uses-sdk in this fixture is `INJECTED from <app>/AndroidManifest.xml`.
         val sdk = entries.filter { it.elementType == "uses-sdk" }
-        assertThat(sdk).isEmpty()
+        assertThat(sdk).hasSize(1)
+        assertThat(sdk.single().elementName).isNull()
+        assertThat(sdk.single().source).isEqualTo(":app")
 
         // Both ADDED and IMPLIED actions for MainActivity should be parsed
         val mainActivityEntries = entries.filter {
@@ -133,6 +136,60 @@ internal class BlameLogParserTest {
         }
         assertThat(mainActivityEntries).hasSize(2)
         assertThat(mainActivityEntries.map { it.source }).containsExactly(":app", ":app")
+    }
+
+    @Test
+    fun `parse captures singleton elements by element type alone`() {
+        val singletonsLog = File(javaClass.classLoader.getResource("test-blame-log-singletons.txt")!!.toURI())
+        val rootDir = File("/Users/dev/MyApp")
+        val entries = BlameLogParser.parse(singletonsLog, rootDir)
+
+        // uses-sdk: AGP-injected from the app manifest, single source
+        val sdk = entries.filter { it.elementType == "uses-sdk" }
+        assertThat(sdk).hasSize(1)
+        assertThat(sdk.single().elementName).isNull()
+        assertThat(sdk.single().source).isEqualTo(":app")
+
+        // queries: declared by app AND merged from a library — two sources
+        val queries = entries.filter { it.elementType == "queries" }
+        assertThat(queries).hasSize(2)
+        assertThat(queries.map { it.source }).containsExactly(
+            ":app",
+            "com.google.android.gms:play-services-base:18.5.0",
+        )
+
+        // supports-screens: app-only
+        val supportsScreens = entries.filter { it.elementType == "supports-screens" }
+        assertThat(supportsScreens).hasSize(1)
+        assertThat(supportsScreens.single().source).isEqualTo(":app")
+
+        // compatible-screens: library-only
+        val compatibleScreens = entries.filter { it.elementType == "compatible-screens" }
+        assertThat(compatibleScreens).hasSize(1)
+        assertThat(compatibleScreens.single().source).isEqualTo("com.example:legacy-screens:1.0.0")
+
+        // uses-configuration / profileable: app-only
+        assertThat(entries.filter { it.elementType == "uses-configuration" }.map { it.source })
+            .containsExactly(":app")
+        assertThat(entries.filter { it.elementType == "profileable" }.map { it.source })
+            .containsExactly(":app")
+    }
+
+    @Test
+    fun `buildSourceMap keys singleton elements by type alone`() {
+        val singletonsLog = File(javaClass.classLoader.getResource("test-blame-log-singletons.txt")!!.toURI())
+        val rootDir = File("/Users/dev/MyApp")
+        val entries = BlameLogParser.parse(singletonsLog, rootDir)
+        val sourceMap = BlameLogParser.buildSourceMap(entries)
+
+        assertThat(sourceMap["uses-sdk"]).containsExactly(":app")
+        assertThat(sourceMap["queries"])
+            .containsExactly(":app", "com.google.android.gms:play-services-base:18.5.0")
+        assertThat(sourceMap["compatible-screens"])
+            .containsExactly("com.example:legacy-screens:1.0.0")
+
+        // Name-keyed elements still use the "$type#$name" key
+        assertThat(sourceMap["package#com.example.helper"]).containsExactly(":app")
     }
 
     @Test
