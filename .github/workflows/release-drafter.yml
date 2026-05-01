@@ -14,7 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'fornewid/manifest-shield'
     steps:
-      - uses: release-drafter/release-drafter@v6
+      # v7 runs on Node.js 24 (v6 was on Node 20, removed from runners 2026-09-16)
+      # and adds a `token` input that defaults to `github.token`, so the explicit
+      # `env: GITHUB_TOKEN` block from the v6 setup is no longer needed.
+      - uses: release-drafter/release-drafter@v7.2.1
         with:
           publish: ${{ startsWith(github.ref, 'refs/tags/') }}
           # When publish.yml pushes a tag we want the GitHub Release to be
@@ -26,5 +29,3 @@ jobs:
           # repo with no prior tags).
           tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
