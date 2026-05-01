@@ -4,7 +4,8 @@ import java.io.File
 
 internal data class BlameEntry(
     val elementType: String,
-    val elementName: String,
+    /** `null` for singleton elements that have no `android:name` (e.g. `uses-sdk`, `queries`). */
+    val elementName: String?,
     val source: String,
 )
 
@@ -50,8 +51,9 @@ internal object BlameLogParser {
                 continue
             }
 
-            // Try to match action lines for current element (collect ALL sources, not just first)
-            if (currentElementType != null && currentElementName != null) {
+            // Try to match action lines for current element (collect ALL sources, not just first).
+            // Singleton elements have a null name and are still attributed via their type alone.
+            if (currentElementType != null) {
                 // Match: ADDED/INJECTED/MERGED/IMPLIED/CONVERTED from [library] /path
                 val bracketedMatch = ACTION_FROM_BRACKETED.find(line)
                 if (bracketedMatch != null) {
@@ -99,13 +101,17 @@ internal object BlameLogParser {
 
     /**
      * Build a map from element key to list of sources.
+     *
+     * - Name-keyed elements use `"$type#$name"` as the key (e.g. `uses-permission#android.permission.INTERNET`).
+     * - Singleton elements with no `android:name` (e.g. `uses-sdk`, `queries`) use `type` alone.
+     *
      * Each element may have multiple sources (e.g., ADDED from app + MERGED from library).
      * Duplicate sources for the same element are deduplicated.
      */
     fun buildSourceMap(entries: List<BlameEntry>): Map<String, List<String>> {
         val map = mutableMapOf<String, MutableList<String>>()
         for (entry in entries) {
-            val key = "${entry.elementType}#${entry.elementName}"
+            val key = entry.elementName?.let { "${entry.elementType}#$it" } ?: entry.elementType
             val sources = map.getOrPut(key) { mutableListOf() }
             if (entry.source !in sources) {
                 sources.add(entry.source)
