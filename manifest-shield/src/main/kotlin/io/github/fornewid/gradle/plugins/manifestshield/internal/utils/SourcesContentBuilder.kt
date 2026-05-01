@@ -19,14 +19,14 @@ internal object SourcesContentBuilder {
     ): String {
         if (sourceMap.isEmpty()) {
             return entries
-                .map { entry -> "${entry.toBaselineString()} -- unknown" }
+                .map { entry -> "${entry.toBaselineString()} -- $UNRESOLVED_SOURCE" }
                 .joinToString("\n", postfix = if (entries.isNotEmpty()) "\n" else "")
         }
 
         val grouped = mutableMapOf<String, MutableList<String>>()
         for (entry in entries) {
             val key = "$elementType#${entry.name}"
-            val sources = sourceMap[key] ?: listOf("unknown")
+            val sources = sourceMap[key] ?: listOf(UNRESOLVED_SOURCE)
             val line = entry.toBaselineString()
             for (source in sources) {
                 grouped.getOrPut(source) { mutableListOf() }.add(line)
@@ -69,7 +69,7 @@ internal object SourcesContentBuilder {
         fun addEntries(tag: String, elementType: String, entries: List<ManifestEntry>, isComponent: Boolean = false) {
             for (entry in entries) {
                 val key = "$elementType#${entry.name}"
-                val entrySources = sourceMap[key] ?: listOf("unknown")
+                val entrySources = sourceMap[key] ?: listOf(UNRESOLVED_SOURCE)
                 val line = entry.toBaselineString()
                 for (source in entrySources) {
                     val lines = sourceTagEntries

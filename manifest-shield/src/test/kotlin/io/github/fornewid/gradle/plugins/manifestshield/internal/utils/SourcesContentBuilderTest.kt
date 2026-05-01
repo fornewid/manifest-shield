@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 internal class SourcesContentBuilderTest {
 
     @Test
-    fun `build with empty source map appends unknown`() {
+    fun `build with empty source map appends unresolved marker`() {
         val entries = listOf(
             ManifestPermission("android.permission.INTERNET"),
             ManifestPermission("android.permission.CAMERA"),
@@ -24,8 +24,8 @@ internal class SourcesContentBuilderTest {
             elementType = "uses-permission",
             sourceMap = emptyMap(),
         )
-        assertThat(result).contains("android.permission.INTERNET -- unknown")
-        assertThat(result).contains("android.permission.CAMERA -- unknown")
+        assertThat(result).contains("android.permission.INTERNET -- <unresolved>")
+        assertThat(result).contains("android.permission.CAMERA -- <unresolved>")
     }
 
     @Test
