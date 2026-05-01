@@ -375,31 +375,49 @@ internal object ManifestVisitor {
      *
      *     intent#action:name:$action[+category:name:$cat][+data:$attr:$value]
      *
-     * The attribute order (action → category → data) and the use of the *first*
-     * non-empty data attribute mirror what AGP records in the blame log. Verified
-     * for the single-data case; multi-data cases inside one `<intent>` may not
-     * round-trip exactly, in which case the lookup falls back to `<unresolved>`
-     * downstream rather than misattributing.
+     * The attribute order (action → category → data) mirrors AGP. Across all
+     * `<data>` children of one `<intent>`, AGP records *one* `data:` segment
+     * derived from the first non-empty data attribute it sees, so we match that
+     * single-segment shape rather than emitting one segment per `<data>` element.
+     * Direct-child traversal avoids the recursive `getElementsByTagName` matches
+     * (per style guide).
      */
     private fun parseQueryIntent(intentNode: Element): QueryIntent {
-        val info = parseIntentContent(intentNode)
+        val actionNodes = intentNode.directChildElements("action")
+        val categoryNodes = intentNode.directChildElements("category")
+        val dataNodes = intentNode.directChildElements("data")
+
+        val actions = actionNodes.mapNotNull { it.attrNS("name") }.sorted()
+        val categories = categoryNodes.mapNotNull { it.attrNS("name") }.sorted()
+        val dataSpecs = dataNodes
+            .map { data ->
+                buildDataSpec(
+                    data.attrNS("scheme") ?: "", data.attrNS("host") ?: "",
+                    data.attrNS("port") ?: "", data.attrNS("path") ?: "",
+                    data.attrNS("pathPrefix") ?: "", data.attrNS("pathPattern") ?: "",
+                    data.attrNS("mimeType") ?: "",
+                )
+            }
+            .filter { it.isNotBlank() }.sorted()
 
         val keyParts = mutableListOf<String>()
-        intentNode.directChildElements("action").forEach { node ->
+        actionNodes.forEach { node ->
             node.attrNS("name")?.let { keyParts.add("action:name:$it") }
         }
-        intentNode.directChildElements("category").forEach { node ->
+        categoryNodes.forEach { node ->
             node.attrNS("name")?.let { keyParts.add("category:name:$it") }
         }
-        intentNode.directChildElements("data").forEach { node ->
-            firstDataAttribute(node)?.let { (attr, value) -> keyParts.add("data:$attr:$value") }
-        }
+        dataNodes.asSequence()
+            .mapNotNull { firstDataAttribute(it) }
+            .firstOrNull()
+            ?.let { (attr, value) -> keyParts.add("data:$attr:$value") }
+
         val blameKey = if (keyParts.isEmpty()) "intent" else "intent#" + keyParts.joinToString("+")
 
         return QueryIntent(
-            actions = info.actions,
-            categories = info.categories,
-            dataSpecs = info.dataSpecs,
+            actions = actions,
+            categories = categories,
+            dataSpecs = dataSpecs,
             blameKey = blameKey,
         )
     }
