@@ -2,7 +2,7 @@ package io.github.fornewid.gradle.plugins.manifestshield.models
 
 internal data class ManifestQuery(
     val packages: List<String>,
-    val intents: List<IntentFilterInfo>,
+    val intents: List<QueryIntent>,
     val providers: List<String>,
 ) {
     fun toBaselineLines(): List<String> {

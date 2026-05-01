@@ -1188,6 +1188,54 @@ internal class ManifestShieldPluginTest {
     }
 
     @Test
+    fun `sources baseline attributes queries intents per child to project module`() {
+        val pluginConfig = """
+            manifestShield {
+                configuration("release") {
+                    queries = true
+                    sources = true
+                }
+            }
+        """.trimIndent()
+
+        val manifestWithIntents = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <queries>
+                    <intent>
+                        <action android:name="android.intent.action.SEND" />
+                        <data android:mimeType="image/*" />
+                    </intent>
+                    <intent>
+                        <action android:name="android.intent.action.VIEW" />
+                        <data android:scheme="https" />
+                    </intent>
+                </queries>
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true" />
+                </application>
+            </manifest>
+        """.trimIndent()
+
+        AndroidProject(
+            manifestContent = manifestWithIntents,
+            pluginConfig = pluginConfig,
+        ).use { project ->
+            build(project, ":app:manifestShieldBaselineRelease")
+
+            val sources = project.readBaselineFile("manifestShield/releaseAndroidManifest.sources.txt")
+            assertThat(sources).isNotNull()
+            // Both intents the app declared land under :app and disambiguate by action.
+            val appSection = sources!!.substringAfter("[:app]").substringBefore("\n[")
+            assertThat(appSection).contains("queries:")
+            assertThat(appSection).contains("action: android.intent.action.SEND")
+            assertThat(appSection).contains("action: android.intent.action.VIEW")
+            // No fallback group: the parser resolved every blame key.
+            assertThat(sources).doesNotContain("[<unresolved>]")
+        }
+    }
+
+    @Test
     fun `baseline task works with configuration cache`() {
         AndroidProject().use { project ->
             val result = build(

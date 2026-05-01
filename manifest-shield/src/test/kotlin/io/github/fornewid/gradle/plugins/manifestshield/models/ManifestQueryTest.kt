@@ -21,10 +21,12 @@ internal class ManifestQueryTest {
         val query = ManifestQuery(
             packages = emptyList(),
             intents = listOf(
-                IntentFilterInfo(
+                QueryIntent(
                     actions = listOf("android.intent.action.SEND"),
                     categories = listOf("android.intent.category.DEFAULT"),
                     dataSpecs = listOf("text/plain"),
+                    blameKey = "intent#action:name:android.intent.action.SEND" +
+                        "+category:name:android.intent.category.DEFAULT+data:mimeType:text/plain",
                 ),
             ),
             providers = emptyList(),

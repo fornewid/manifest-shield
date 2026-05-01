@@ -11,6 +11,7 @@ import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestPermissio
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestProfileable
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestQuery
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestSdk
+import io.github.fornewid.gradle.plugins.manifestshield.models.QueryIntent
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestSupportsScreens
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestUsesConfiguration
 import java.io.File
@@ -120,7 +121,7 @@ internal object ManifestVisitor {
                 val packages = node.getElementsByTagName("package").toElementList()
                     .mapNotNull { it.attrNS("name") }
                 val intents = node.directChildElements("intent")
-                    .map { intentNode -> parseIntentContent(intentNode) }
+                    .map { intentNode -> parseQueryIntent(intentNode) }
                 val providers = node.getElementsByTagName("provider").toElementList()
                     .mapNotNull { it.attrNS("authorities") }
                 ManifestQuery(packages = packages, intents = intents, providers = providers)
@@ -366,6 +367,62 @@ internal object ManifestVisitor {
             }
             .filter { it.isNotBlank() }.sorted()
         return IntentFilterInfo(actions = actions, categories = categories, dataSpecs = dataSpecs)
+    }
+
+    /**
+     * Parse an `<intent>` child of `<queries>` and synthesize the AGP manifest-merger
+     * blame-log key alongside the display fields. The key takes the form:
+     *
+     *     intent#action:name:$action[+category:name:$cat][+data:$attr:$value]
+     *
+     * The attribute order (action → category → data) and the use of the *first*
+     * non-empty data attribute mirror what AGP records in the blame log. Verified
+     * for the single-data case; multi-data cases inside one `<intent>` may not
+     * round-trip exactly, in which case the lookup falls back to `<unresolved>`
+     * downstream rather than misattributing.
+     */
+    private fun parseQueryIntent(intentNode: Element): QueryIntent {
+        val info = parseIntentContent(intentNode)
+
+        val keyParts = mutableListOf<String>()
+        intentNode.directChildElements("action").forEach { node ->
+            node.attrNS("name")?.let { keyParts.add("action:name:$it") }
+        }
+        intentNode.directChildElements("category").forEach { node ->
+            node.attrNS("name")?.let { keyParts.add("category:name:$it") }
+        }
+        intentNode.directChildElements("data").forEach { node ->
+            firstDataAttribute(node)?.let { (attr, value) -> keyParts.add("data:$attr:$value") }
+        }
+        val blameKey = if (keyParts.isEmpty()) "intent" else "intent#" + keyParts.joinToString("+")
+
+        return QueryIntent(
+            actions = info.actions,
+            categories = info.categories,
+            dataSpecs = info.dataSpecs,
+            blameKey = blameKey,
+        )
+    }
+
+    /**
+     * AGP records `<data>` in the blame-log key by its first non-empty attribute.
+     * `pathSuffix` and `pathAdvancedPattern` were introduced in API 31; including
+     * them keeps the synthesized key consistent with manifests that use the newer
+     * matching attributes.
+     * [attrNS] already returns null for blank values, so we only need to walk the
+     * priority order until something resolves.
+     */
+    private fun firstDataAttribute(dataNode: Element): Pair<String, String>? {
+        val order = listOf(
+            "scheme", "host", "port",
+            "path", "pathPrefix", "pathPattern", "pathSuffix", "pathAdvancedPattern",
+            "mimeType",
+        )
+        for (attr in order) {
+            val value = dataNode.attrNS(attr)
+            if (value != null) return attr to value
+        }
+        return null
     }
 
     /** Get direct child elements by tag name (non-recursive, unlike getElementsByTagName) */

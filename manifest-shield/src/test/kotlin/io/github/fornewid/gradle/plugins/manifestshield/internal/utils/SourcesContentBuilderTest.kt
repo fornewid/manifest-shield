@@ -9,6 +9,7 @@ import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestPermissio
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestProfileable
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestQuery
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestSdk
+import io.github.fornewid.gradle.plugins.manifestshield.models.QueryIntent
 import org.junit.jupiter.api.Test
 
 internal class SourcesContentBuilderTest {
@@ -186,6 +187,82 @@ internal class SourcesContentBuilderTest {
         val unresolvedSection = result.substringAfter("[<unresolved>]")
         assertThat(unresolvedSection).contains("queries:")
         assertThat(unresolvedSection).contains("package: com.unknown")
+    }
+
+    @Test
+    fun `buildMergedWithSdk attributes queries intents per child via composite blame key`() {
+        // App declares two intents, library injects one — each must land in its own
+        // source group, not duplicated like the old container-based fallback did.
+        val sendKey = "intent#action:name:android.intent.action.SEND+data:mimeType:image/*"
+        val viewKey = "intent#action:name:android.intent.action.VIEW+data:scheme:https"
+        val pickKey = "intent#action:name:android.intent.action.PICK"
+
+        val manifest = emptyManifest().copy(
+            queries = ManifestQuery(
+                packages = emptyList(),
+                intents = listOf(
+                    QueryIntent(actions = listOf("android.intent.action.SEND"), categories = emptyList(),
+                        dataSpecs = listOf("image/*"), blameKey = sendKey),
+                    QueryIntent(actions = listOf("android.intent.action.VIEW"), categories = emptyList(),
+                        dataSpecs = listOf("https://"), blameKey = viewKey),
+                    QueryIntent(actions = listOf("android.intent.action.PICK"), categories = emptyList(),
+                        dataSpecs = emptyList(), blameKey = pickKey),
+                ),
+                providers = emptyList(),
+            ),
+        )
+        val sourceMap = mapOf(
+            sendKey to listOf(":app"),
+            viewKey to listOf(":app"),
+            pickKey to listOf(":sample:module1"),
+        )
+
+        val result = SourcesContentBuilder.buildMergedWithSdk(
+            manifest = manifest,
+            sourceMap = sourceMap,
+            projectPath = ":app",
+            flags = enableSingletons(),
+        )
+
+        val appSection = result.substringAfter("[:app]").substringBefore("[:")
+        val module1Section = result.substringAfter("[:sample:module1]")
+
+        // SEND and VIEW belong to :app
+        assertThat(appSection).contains("action: android.intent.action.SEND")
+        assertThat(appSection).contains("action: android.intent.action.VIEW")
+        assertThat(appSection).doesNotContain("action: android.intent.action.PICK")
+        // PICK belongs to :sample:module1
+        assertThat(module1Section).contains("action: android.intent.action.PICK")
+        assertThat(module1Section).doesNotContain("action: android.intent.action.SEND")
+        assertThat(module1Section).doesNotContain("action: android.intent.action.VIEW")
+        assertThat(result).doesNotContain("[<unresolved>]")
+    }
+
+    @Test
+    fun `buildMergedWithSdk routes intent to unresolved when blame key is missing`() {
+        val unknownKey = "intent#action:name:com.example.UNKNOWN"
+        val manifest = emptyManifest().copy(
+            queries = ManifestQuery(
+                packages = emptyList(),
+                intents = listOf(
+                    QueryIntent(actions = listOf("com.example.UNKNOWN"), categories = emptyList(),
+                        dataSpecs = emptyList(), blameKey = unknownKey),
+                ),
+                providers = emptyList(),
+            ),
+        )
+
+        val result = SourcesContentBuilder.buildMergedWithSdk(
+            manifest = manifest,
+            sourceMap = emptyMap(),
+            projectPath = ":app",
+            flags = enableSingletons(),
+        )
+
+        assertThat(result).contains("[<unresolved>]")
+        val unresolvedSection = result.substringAfter("[<unresolved>]")
+        assertThat(unresolvedSection).contains("intent:")
+        assertThat(unresolvedSection).contains("action: com.example.UNKNOWN")
     }
 
     @Test
