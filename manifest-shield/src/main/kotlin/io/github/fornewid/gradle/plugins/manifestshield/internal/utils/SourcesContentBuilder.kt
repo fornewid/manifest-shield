@@ -212,10 +212,13 @@ internal object SourcesContentBuilder {
      * each carry independent sources in the manifest-merger blame log.
      *
      * - `<package>`: keyed by `package#$name` in the blame log → resolved per package.
-     * - `<provider>` and `<intent>`: child-level keys in the blame log are inconsistent
-     *   (providers may use authorities, intents are composite), so they are attributed
-     *   to the first source of the enclosing `<queries>` container as a best-effort.
-     *   Per-child resolution for these two is tracked as a follow-up.
+     * - `<intent>`: keyed by a composite of action/category/data attributes (synthesized
+     *   in [io.github.fornewid.gradle.plugins.manifestshield.models.QueryIntent.blameKey])
+     *   → resolved per intent.
+     * - `<provider>`: AGP rejects multi-source `<queries><provider>` with conflicting
+     *   authorities at merge time, so a single-source declaration is the only buildable
+     *   case. Attributed to the enclosing `<queries>` container's first source, which
+     *   is necessarily the one source that declared the provider.
      */
     private fun addQueriesEntries(
         queries: ManifestQuery,
@@ -236,16 +239,20 @@ internal object SourcesContentBuilder {
             }
         }
 
-        if (queries.providers.isNotEmpty() || queries.intents.isNotEmpty()) {
+        queries.intents.forEach { intent ->
+            val sources = sourceMap[intent.blameKey] ?: listOf(UNRESOLVED_SOURCE)
+            for (source in sources) {
+                addLine(source, "intent:")
+                intent.actions.forEach { addLine(source, "  action: $it") }
+                intent.categories.forEach { addLine(source, "  category: $it") }
+                intent.dataSpecs.forEach { addLine(source, "  data: $it") }
+            }
+        }
+
+        if (queries.providers.isNotEmpty()) {
             val containerSource = sourceMap["queries"]?.firstOrNull() ?: UNRESOLVED_SOURCE
             queries.providers.sorted().forEach { auth ->
                 addLine(containerSource, "provider: $auth")
-            }
-            queries.intents.forEach { intent ->
-                addLine(containerSource, "intent:")
-                intent.actions.forEach { addLine(containerSource, "  action: $it") }
-                intent.categories.forEach { addLine(containerSource, "  category: $it") }
-                intent.dataSpecs.forEach { addLine(containerSource, "  data: $it") }
             }
         }
     }

@@ -176,6 +176,18 @@ internal class BlameLogParserTest {
     }
 
     @Test
+    fun `parse captures composite blame keys for queries-level intents`() {
+        val singletonsLog = File(javaClass.classLoader.getResource("test-blame-log-singletons.txt")!!.toURI())
+        val rootDir = File("/Users/dev/MyApp")
+        val sourceMap = BlameLogParser.buildSourceMap(BlameLogParser.parse(singletonsLog, rootDir))
+
+        assertThat(sourceMap["intent#action:name:android.intent.action.SEND+data:mimeType:image/*"])
+            .containsExactly(":app")
+        assertThat(sourceMap["intent#action:name:android.intent.action.PICK"])
+            .containsExactly("com.example:lib:1.0.0")
+    }
+
+    @Test
     fun `buildSourceMap keys singleton elements by type alone`() {
         val singletonsLog = File(javaClass.classLoader.getResource("test-blame-log-singletons.txt")!!.toURI())
         val rootDir = File("/Users/dev/MyApp")

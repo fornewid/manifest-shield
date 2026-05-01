@@ -123,4 +123,93 @@ internal class ManifestVisitorEdgeCaseTest {
         assertThat(result.usesFeature[0].required).isTrue()
         assertThat(result.usesFeature[0].toBaselineString()).isEqualTo("android.hardware.camera (required)")
     }
+
+    @Test
+    fun `parse synthesizes blame keys for queries-level intents matching AGP format`() {
+        // Reproduces the exact composite-key shape AGP records in
+        // manifest-merger-<variant>-report.txt for <queries><intent> children.
+        val manifest = tempDir.resolve("manifest.xml").apply {
+            writeText("""
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    package="com.example">
+                    <queries>
+                        <intent>
+                            <action android:name="android.intent.action.SEND" />
+                            <data android:mimeType="image/*" />
+                        </intent>
+                        <intent>
+                            <action android:name="android.intent.action.VIEW" />
+                            <data android:scheme="https" />
+                        </intent>
+                        <intent>
+                            <action android:name="android.intent.action.PICK" />
+                        </intent>
+                    </queries>
+                </manifest>
+            """.trimIndent())
+        }
+        val result = ManifestVisitor.parse(manifest)
+
+        val keys = result.queries!!.intents.map { it.blameKey }
+        assertThat(keys).containsExactly(
+            "intent#action:name:android.intent.action.SEND+data:mimeType:image/*",
+            "intent#action:name:android.intent.action.VIEW+data:scheme:https",
+            "intent#action:name:android.intent.action.PICK",
+        ).inOrder()
+    }
+
+    @Test
+    fun `parse emits a single data segment even when intent has multiple data children`() {
+        // AGP records only one `data:` segment per <intent> in the blame-log key,
+        // derived from the first non-empty data attribute across all <data> children.
+        // Naive per-data emission would produce a key AGP never records → mismatch.
+        val manifest = tempDir.resolve("manifest.xml").apply {
+            writeText("""
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    package="com.example">
+                    <queries>
+                        <intent>
+                            <action android:name="android.intent.action.VIEW" />
+                            <data android:scheme="https" />
+                            <data android:mimeType="image/*" />
+                        </intent>
+                    </queries>
+                </manifest>
+            """.trimIndent())
+        }
+        val result = ManifestVisitor.parse(manifest)
+
+        // Only one data segment in the key (from the first <data> child),
+        // but both data specs surface in the display output.
+        val intent = result.queries!!.intents.single()
+        assertThat(intent.blameKey)
+            .isEqualTo("intent#action:name:android.intent.action.VIEW+data:scheme:https")
+        assertThat(intent.dataSpecs).hasSize(2)
+    }
+
+    @Test
+    fun `parse picks the first non-empty data attribute for the intent blame key`() {
+        // AGP records only the first non-empty data attribute in the composite key,
+        // following the order scheme → host → port → path → pathPrefix → pathPattern → mimeType.
+        val manifest = tempDir.resolve("manifest.xml").apply {
+            writeText("""
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    package="com.example">
+                    <queries>
+                        <intent>
+                            <action android:name="android.intent.action.VIEW" />
+                            <data android:scheme="https" android:host="example.com" />
+                        </intent>
+                    </queries>
+                </manifest>
+            """.trimIndent())
+        }
+        val result = ManifestVisitor.parse(manifest)
+
+        assertThat(result.queries!!.intents.single().blameKey)
+            .isEqualTo("intent#action:name:android.intent.action.VIEW+data:scheme:https")
+    }
 }

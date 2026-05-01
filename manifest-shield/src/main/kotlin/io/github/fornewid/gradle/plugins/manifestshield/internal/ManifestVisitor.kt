@@ -11,6 +11,7 @@ import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestPermissio
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestProfileable
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestQuery
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestSdk
+import io.github.fornewid.gradle.plugins.manifestshield.models.QueryIntent
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestSupportsScreens
 import io.github.fornewid.gradle.plugins.manifestshield.models.ManifestUsesConfiguration
 import java.io.File
@@ -120,7 +121,7 @@ internal object ManifestVisitor {
                 val packages = node.getElementsByTagName("package").toElementList()
                     .mapNotNull { it.attrNS("name") }
                 val intents = node.directChildElements("intent")
-                    .map { intentNode -> parseIntentContent(intentNode) }
+                    .map { intentNode -> parseQueryIntent(intentNode) }
                 val providers = node.getElementsByTagName("provider").toElementList()
                     .mapNotNull { it.attrNS("authorities") }
                 ManifestQuery(packages = packages, intents = intents, providers = providers)
@@ -366,6 +367,80 @@ internal object ManifestVisitor {
             }
             .filter { it.isNotBlank() }.sorted()
         return IntentFilterInfo(actions = actions, categories = categories, dataSpecs = dataSpecs)
+    }
+
+    /**
+     * Parse an `<intent>` child of `<queries>` and synthesize the AGP manifest-merger
+     * blame-log key alongside the display fields. The key takes the form:
+     *
+     *     intent#action:name:$action[+category:name:$cat][+data:$attr:$value]
+     *
+     * The attribute order (action → category → data) mirrors AGP. Across all
+     * `<data>` children of one `<intent>`, AGP records *one* `data:` segment
+     * derived from the first non-empty data attribute it sees, so we match that
+     * single-segment shape rather than emitting one segment per `<data>` element.
+     * Direct-child traversal avoids the recursive `getElementsByTagName` matches
+     * (per style guide).
+     */
+    private fun parseQueryIntent(intentNode: Element): QueryIntent {
+        val actionNodes = intentNode.directChildElements("action")
+        val categoryNodes = intentNode.directChildElements("category")
+        val dataNodes = intentNode.directChildElements("data")
+
+        val actions = actionNodes.mapNotNull { it.attrNS("name") }.sorted()
+        val categories = categoryNodes.mapNotNull { it.attrNS("name") }.sorted()
+        val dataSpecs = dataNodes
+            .map { data ->
+                buildDataSpec(
+                    data.attrNS("scheme") ?: "", data.attrNS("host") ?: "",
+                    data.attrNS("port") ?: "", data.attrNS("path") ?: "",
+                    data.attrNS("pathPrefix") ?: "", data.attrNS("pathPattern") ?: "",
+                    data.attrNS("mimeType") ?: "",
+                )
+            }
+            .filter { it.isNotBlank() }.sorted()
+
+        val keyParts = mutableListOf<String>()
+        actionNodes.forEach { node ->
+            node.attrNS("name")?.let { keyParts.add("action:name:$it") }
+        }
+        categoryNodes.forEach { node ->
+            node.attrNS("name")?.let { keyParts.add("category:name:$it") }
+        }
+        dataNodes.asSequence()
+            .mapNotNull { firstDataAttribute(it) }
+            .firstOrNull()
+            ?.let { (attr, value) -> keyParts.add("data:$attr:$value") }
+
+        val blameKey = if (keyParts.isEmpty()) "intent" else "intent#" + keyParts.joinToString("+")
+
+        return QueryIntent(
+            actions = actions,
+            categories = categories,
+            dataSpecs = dataSpecs,
+            blameKey = blameKey,
+        )
+    }
+
+    /**
+     * AGP records `<data>` in the blame-log key by its first non-empty attribute.
+     * `pathSuffix` and `pathAdvancedPattern` were introduced in API 31; including
+     * them keeps the synthesized key consistent with manifests that use the newer
+     * matching attributes.
+     * [attrNS] already returns null for blank values, so we only need to walk the
+     * priority order until something resolves.
+     */
+    private fun firstDataAttribute(dataNode: Element): Pair<String, String>? {
+        val order = listOf(
+            "scheme", "host", "port",
+            "path", "pathPrefix", "pathPattern", "pathSuffix", "pathAdvancedPattern",
+            "mimeType",
+        )
+        for (attr in order) {
+            val value = dataNode.attrNS(attr)
+            if (value != null) return attr to value
+        }
+        return null
     }
 
     /** Get direct child elements by tag name (non-recursive, unlike getElementsByTagName) */
